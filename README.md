@@ -2,8 +2,6 @@
 
 A sidebar travel companion for **VS Code** and **Cursor**. Walk the road, visit destinations, recruit companions, and keep your character company while you work. Progress is saved in extension `globalState`.
 
-**[Source on GitHub →](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)** · Latest package: **0.0.41**
-
 ## About
 
 You are never alone in the Explorer panel. Your hero walks a scrolling pixel-art world toward the next landmark — meters tick up as the ground moves, camps appear on the road, and travelers can join your party along the way.
