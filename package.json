@@ -1,0 +1,60 @@
+{
+  "name": "travelling-kingdom",
+  "displayName": "Travelling Kingdom",
+  "description": "A sidebar travel companion with destinations, party recruitment, meters, and care actions.",
+  "version": "0.0.40",
+  "publisher": "MarySue",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/issues"
+  },
+  "homepage": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom",
+  "activationEvents": [
+    "onView:travellingKingdom.petView",
+    "onCommand:travellingKingdom.focus",
+    "onCommand:travellingKingdom.reset"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "travellingKingdom.petView",
+          "name": "Travelling Kingdom"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "travellingKingdom.focus",
+        "title": "Travelling Kingdom: Focus Pet View"
+      },
+      {
+        "command": "travellingKingdom.reset",
+        "title": "Travelling Kingdom: Reset Progress"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/raw/main/ --baseImagesUrl https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/raw/main/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.2",
+    "typescript": "^5.3.3"
+  }
+}
