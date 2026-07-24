@@ -642,7 +642,7 @@ input {
   margin: 0;
   /* Pin to the left on the grass line (does not recenter on resize). */
   position: absolute;
-  left: 12px;
+  left: 36px;
   right: auto;
   bottom: 0;
   width: max-content;

@@ -1,59 +1,99 @@
 # Travelling Kingdom
 
-A VS Code / Cursor **Explorer sidebar** travel companion. Walk the road, visit destinations, recruit companions, and care for your character. Progress is stored in extension `globalState`.
+A sidebar travel companion for **VS Code** and **Cursor**. Walk the road, visit destinations, recruit companions, and keep your character company while you work. Progress is saved in extension `globalState`.
 
-**Repository:** [MarySueXLsD/vs_extension_travelling_kingdom](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)
+**[Source on GitHub →](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)** · Latest package: **0.0.41**
 
-Version-by-version notes for packaged builds: **[docs/VERSION_HISTORY.md](docs/VERSION_HISTORY.md)**. Latest package: **0.0.40**.
+## About
 
-Marketplace publisher signup values: **[docs/MARKETPLACE_PUBLISHER.md](docs/MARKETPLACE_PUBLISHER.md)**.
+You are never alone in the Explorer panel. Your hero walks a scrolling pixel-art world toward the next landmark — meters tick up as the ground moves, camps appear on the road, and travelers can join your party along the way.
 
-## Features
+**What you'll do**
 
-- Character select and persistent name / level / travel meters
-- Scrolling world (ground, decor, optional parallax + clouds)
-- Destination landmarks (e.g. Soldier Camp) with Continue / depart
-- Party recruitment cutscene and companion follow
-- Settings: distance units, minimal UI / background, clouds
+- **Travel the kingdom** — walk-in-place while the world scrolls; tap to boost speed
+- **Reach destinations** — fill the meter, stop at landmarks (Soldier Camp and beyond), then Continue
+- **Grow your party** — meet hooded travelers, recruit them, and keep them walking behind you
+- **Tune the journey** — metric or imperial distance, minimal UI / background, optional clouds
 
-## Run (F5)
+**Features**
 
-1. Open this folder in VS Code or Cursor.
-2. Run `npm install`.
-3. Press **F5** (or Run and Debug → **Run Extension**).
-4. In the Extension Development Host, open **Explorer** — the **Travelling Kingdom** section is in the left sidebar.
-5. Tap the character or use the nav actions. Reload the window — meters and level should remain.
+- Explorer webview with royal chrome (or minimalistic mode)
+- Character select, persistent name / level / travel meters / party size
+- Parallax scenery, ground tiles, roadside decor, and destination camps
+- Recruit cutscene with scroll-based meet and live camera framing
+- Settings panel and reset progress command
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>On the road</strong> — Queen and companion walking through pine country toward Pine Hollow.
+      <br><br>
+      <img src="assets/home-royal.png" width="100%" alt="Travelling Kingdom home view with royal UI">
+    </td>
+    <td width="50%" valign="top">
+      <strong>Party of two</strong> — The hooded traveler follows behind the lead on the grassy path.
+      <br><br>
+      <img src="assets/home-party.png" width="100%" alt="Party walking in the sidebar">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>In the Explorer</strong> — Lives in the VS Code / Cursor sidebar next to your files.
+      <br><br>
+      <img src="assets/sidebar-explorer.png" width="100%" alt="Extension in Explorer sidebar">
+    </td>
+    <td width="50%" valign="top">
+      <strong>Settings</strong> — Clouds, distance units, minimalistic UI / background, and reset.
+      <br><br>
+      <img src="assets/settings.png" width="100%" alt="Settings panel">
+    </td>
+  </tr>
+</table>
 
 ## Install from VSIX
 
-1. Run `npm run package` (builds `travelling-kingdom-<version>.vsix`).
-2. In Cursor/VS Code: **Extensions** → `...` → **Install from VSIX…** → pick the new `.vsix`.
-3. If an older Tamagotchi (or earlier Travelling Kingdom) build is installed, uninstall it first, then reload the window.
-4. Open **Explorer** and expand the **Travelling Kingdom** section.
+1. Run `npm run package` (or download a release `.vsix` when published).
+2. In Cursor / VS Code: **Extensions** → `...` → **Install from VSIX…**
+3. Open **Explorer** and expand **Travelling Kingdom**.
 
-## Scripts
+If an older Tamagotchi-named build is installed, uninstall it first (extension ids changed with the rebrand).
 
-- `npm run compile` — compile TypeScript to `dist/`
-- `npm run watch` — recompile on change
-- `npm run package` — compile and build a `.vsix`
+## Run (development)
 
-## Assets
+1. Open this folder in VS Code or Cursor
+2. `npm install`
+3. Press **F5** (Run Extension)
+4. In the Extension Development Host, open **Explorer** → **Travelling Kingdom**
 
-```
-static/
-  characters/          female_spritesheet.png, male_spritesheet.png, characters1.png
-  ui/                  64x64_royal.png, 16x32_button.png, ui_bar.png
-  world/
-    destinations.json
-    background/        background_layer_1.png … 6.png (+ 1b)
-    clouds/            Cloud1.png … Cloud10.png
-    environment/       floor_tiles.png, decor.png, houses, trees, …
-```
+### Scripts
 
-Wired from [`src/travellingKingdomViewProvider.ts`](src/travellingKingdomViewProvider.ts) into the webview (`data-*` URIs). Webview scripts load those URIs; they do not hardcode disk paths.
+| Command | Role |
+| --- | --- |
+| `npm run compile` | TypeScript → `dist/` |
+| `npm run watch` | Recompile on change |
+| `npm run package` | Build `travelling-kingdom-<version>.vsix` |
 
-## Publisher
+### Project layout
 
-- **Display name:** Viktar Syanau  
-- **Publisher ID:** MarySue  
-- **Support:** abbigeilwf@outlook.com
+| Path | Role |
+| --- | --- |
+| [`src/`](src/) | Extension host (`extension.ts`, state, webview provider) |
+| [`media/`](media/) | Webview game (`game.js` / `main.js`), styles, icons |
+| [`static/`](static/) | Characters, UI chrome, world art, `destinations.json` |
+| [`docs/`](docs/) | Version history, Marketplace publisher form values |
+| [`assets/`](assets/) | README screenshots |
+
+### Documentation
+
+- [Version history](docs/VERSION_HISTORY.md) — packaged build notes
+- [Marketplace publisher](docs/MARKETPLACE_PUBLISHER.md) — Create Publisher form values
+
+## Credits
+
+| Role | Name |
+| --- | --- |
+| Designer / programmer | Viktar Syanau (MarySue) |
+
+**Publisher ID:** `MarySue` · **Support:** abbigeilwf@outlook.com

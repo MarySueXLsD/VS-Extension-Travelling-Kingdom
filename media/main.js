@@ -98,9 +98,10 @@
   const CAMP_NPC_COL = 3; // male sheet column 4 (1-based)
   const CAMP_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
   const CAMP_NPC_FPS = 5;
-  const PET_BASE_LEFT = 12;
+  /** Lead X inset from the left edge (solo). Higher = more room for the trail. */
+  const PET_BASE_LEFT = 36;
   /** Extra lead inset per party member so the trail fits on screen. */
-  const CAMERA_PAD_PER_MEMBER = 40;
+  const CAMERA_PAD_PER_MEMBER = 44;
   /** Companion trails this far behind the leader (px). */
   const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.58);
   /** Camera settle speed — lower = slower, smoother ease to lead position. */
@@ -678,7 +679,7 @@
 
   function getPetScreenX() {
     if (!petEl) {
-      return 12 + SPRITE_DISPLAY / 2;
+      return PET_BASE_LEFT + SPRITE_DISPLAY / 2;
     }
     return petEl.offsetLeft + petEl.offsetWidth / 2;
   }

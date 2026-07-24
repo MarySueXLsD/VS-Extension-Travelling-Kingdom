@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.40.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.41.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -44,7 +44,10 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.30 | `tamagotchi-0.0.30.vsix` | 968 KB | 55 | |
 | 0.0.31 | `tamagotchi-0.0.31.vsix` | 968 KB | 55 | |
 | 0.0.32 | `tamagotchi-0.0.32.vsix` | — | 55 | |
-| 0.0.33 | `tamagotchi-0.0.33.vsix` | — | 55 | Current |
+| 0.0.33 | `tamagotchi-0.0.33.vsix` | — | 55 | |
+| 0.0.34–0.0.39 | `tamagotchi-0.0.*.vsix` | — | — | Pre-rebrand builds (camp, party, recruit cutscene) |
+| 0.0.40 | `travelling-kingdom-0.0.40.vsix` | ~979 KB | 57 | Rebrand to Travelling Kingdom; publisher MarySue |
+| 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Current: lead inset + party camera room |
 
 ---
 
@@ -332,6 +335,23 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 | 0.0.27 → 0.0.28 | — | Camp layering + Continue/depart unstick |
 | 0.0.28 → 0.0.29 | — | Camp lingers after Continue; same world scrolls away |
 | 0.0.29 → 0.0.30 | `characters1.png` | Camp dog + two sitting knights |
+| 0.0.30 → 0.0.40 | — | Party recruit, scroll-meet cutscene, live camera; rebrand to Travelling Kingdom (`travellingKingdom.*`, publisher MarySue) |
+| 0.0.40 → 0.0.41 | — | Lead inset `PET_BASE_LEFT` 36 + party pad 44 so solo/party/cutscene fit farther from the left edge |
+
+---
+
+## 0.0.40 — Travelling Kingdom rebrand
+
+- Extension id / package name: `travelling-kingdom` (publisher `MarySue`)
+- View / commands: `travellingKingdom.petView`, `travellingKingdom.focus`, `travellingKingdom.reset`
+- Storage key: `travellingKingdom.petState` (does not migrate old `tamagotchi.petState`)
+- Scroll-based recruit meet + camera ease while traveling
+- Docs: README, Marketplace publisher form values, GitHub remote
+
+## 0.0.41 — Camera / lead framing
+
+- `PET_BASE_LEFT` **12 → 36**; CSS `.pet` left matches
+- `CAMERA_PAD_PER_MEMBER` **40 → 44** (party of 2 lead ~80px; companion stays on-screen in cutscene)
 
 ---
 
