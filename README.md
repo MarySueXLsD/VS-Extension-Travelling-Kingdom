@@ -2,7 +2,7 @@
 
 A sidebar travel companion for **VS Code** and **Cursor**. Walk the road, visit destinations, recruit companions, and keep your character company while you work. Progress is saved in extension `globalState`.
 
-**[Source on GitHub →](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)** · Latest package: **0.0.41**
+**[Source on GitHub →](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)** · Latest package: **0.0.42**
 
 ## About
 

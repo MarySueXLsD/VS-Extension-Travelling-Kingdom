@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.41.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.42.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -47,7 +47,8 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.33 | `tamagotchi-0.0.33.vsix` | — | 55 | |
 | 0.0.34–0.0.39 | `tamagotchi-0.0.*.vsix` | — | — | Pre-rebrand builds (camp, party, recruit cutscene) |
 | 0.0.40 | `travelling-kingdom-0.0.40.vsix` | ~979 KB | 57 | Rebrand to Travelling Kingdom; publisher MarySue |
-| 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Current: lead inset + party camera room |
+| 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Lead inset + party camera room |
+| 0.0.42 | `travelling-kingdom-0.0.42.vsix` | — | — | Apple Grove landmark; party of 3; dual companion trail + camera |
 
 ---
 
@@ -298,6 +299,7 @@ Travel HUD + world layout polish:
 | `ui_bar.png` | 0.0.8 |
 | `destinations.json` | 0.0.10 |
 | `Cloud1.png`–`Cloud10.png` | 0.0.13 |
+| `apple_tree.png`, `willow_tree.png` | 0.0.42 |
 
 Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship in every recoverable build.
 
@@ -337,6 +339,7 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 | 0.0.29 → 0.0.30 | `characters1.png` | Camp dog + two sitting knights |
 | 0.0.30 → 0.0.40 | — | Party recruit, scroll-meet cutscene, live camera; rebrand to Travelling Kingdom (`travellingKingdom.*`, publisher MarySue) |
 | 0.0.40 → 0.0.41 | — | Lead inset `PET_BASE_LEFT` 36 + party pad 44 so solo/party/cutscene fit farther from the left edge |
+| 0.0.41 → 0.0.42 | `apple_tree.png`, `willow_tree.png` | Apple Grove destination; `#companion-2`; grove landmark + recruit cutscene; party of 3 trail/camera (`PET_BASE_LEFT` 28, `CAMERA_PAD_PER_MEMBER` 36) |
 
 ---
 
@@ -352,6 +355,14 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 
 - `PET_BASE_LEFT` **12 → 36**; CSS `.pet` left matches
 - `CAMERA_PAD_PER_MEMBER` **40 → 44** (party of 2 lead ~80px; companion stays on-screen in cutscene)
+
+## 0.0.42 — Apple Grove and party of three
+
+- Destination level 2 renamed **River Town → Apple Grove** (`destinations.json`); depart at level 2 bumps `partySize` to **3**
+- **Apple Grove landmark** at level 2: ~30 apple trees + willow (`apple_tree.png`, `willow_tree.png`); forest woman idles on `#companion-2` (female sheet col 2, standing rows 2–6)
+- **Second companion slot** (`#companion-2`); hooded camp recruit stays slot 0, grove recruit slot 1
+- **Scroll-meet recruit cutscene** parameterized by `joinPartySize` (camp → 2, grove → 3); grove NPC mirrors when facing the pet
+- **Party-of-3 trail + camera**: `PET_BASE_LEFT` **28**, `CAMERA_PAD_PER_MEMBER` **36**; lead eases right as companions join; both followers walk behind the hero after grove Continue
 
 ---
 
