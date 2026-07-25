@@ -676,6 +676,10 @@ input {
   z-index: 2;
 }
 
+.companion-slot-right {
+  z-index: 5;
+}
+
 .depart-btn {
   position: absolute;
   z-index: 6;

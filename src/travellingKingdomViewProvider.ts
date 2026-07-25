@@ -257,10 +257,16 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'decor.png')
     );
     const appleTreeUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'apple_tree.png')
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'tree_apple.png')
     );
     const willowTreeUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'willow_tree.png')
+    );
+    const tentSmallUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'tent_small.png')
+    );
+    const tentLargeUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'tent_large.png')
     );
     const houseUris = [1, 2, 3, 4, 5, 6].map((n) =>
       webview.asWebviewUri(
@@ -318,6 +324,8 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     data-decor="${decorUri}"
     data-apple-tree="${appleTreeUri}"
     data-willow-tree="${willowTreeUri}"
+    data-tent-small="${tentSmallUri}"
+    data-tent-large="${tentLargeUri}"
     data-house-1="${houseUris[0]}"
     data-house-2="${houseUris[1]}"
     data-house-3="${houseUris[2]}"
@@ -409,6 +417,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas id="camp-npc" class="camp-npc" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-2" class="camp-npc companion-slot" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-3" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-4" class="companion-slot companion-slot-right" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>

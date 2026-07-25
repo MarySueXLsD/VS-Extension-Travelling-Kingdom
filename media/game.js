@@ -18,6 +18,7 @@
   const campNpcEl = document.getElementById('camp-npc');
   const companion2El = document.getElementById('companion-2');
   const companion3El = document.getElementById('companion-3');
+  const companion4El = document.getElementById('companion-4');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -101,6 +102,14 @@
   const TOWN_NPC_COL = 3; // female sheet column 4 (1-based)
   const TOWN_NPC_OX = 0.85;
   const TOWN_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
+  /** Scout Camp (level 4) — standalone tents + halberd guard. */
+  const TENT_DEST_LEVEL = 4;
+  const TENT_LARGE_OX = 0.4;
+  const TENT_SMALL_OX = -2.8;
+  const TENT_NPC_OX = 1.55;
+  const TENT_NPC_COL = 5; // male sheet column 6 (1-based)
+  const TENT_NPC_ROWS = [1, 2, 3, 4, 5];
+  const TENT_DISPLAY_SCALE = 1.15;
   const HOUSE_DISPLAY_SCALE = 1.25;
   const TOWN_HOUSES = [
     { id: 'house-1', file: 'house_1', ox: -12.5, scale: HOUSE_DISPLAY_SCALE },
@@ -191,12 +200,21 @@
   ];
   /** Companion look is keyed by which landmark recruited them (not party index). */
   const COMPANION_BY_KIND = {
+    tent: {
+      id: 'halberd',
+      kind: 'tent',
+      el: companion4El,
+      sheet: 'male',
+      col: TENT_NPC_COL,
+      side: 'right',
+    },
     camp: {
       id: 'hooded',
       kind: 'camp',
       el: campNpcEl,
       sheet: 'male',
       col: 3,
+      side: 'left',
     },
     grove: {
       id: 'forest',
@@ -204,6 +222,7 @@
       el: companion2El,
       sheet: 'female',
       col: 1,
+      side: 'left',
     },
     town: {
       id: 'town',
@@ -211,6 +230,7 @@
       el: companion3El,
       sheet: 'female',
       col: 3,
+      side: 'left',
     },
   };
 
@@ -285,6 +305,8 @@
   let groveFemaleImage = null;
   let townHouseImgs = [];
   let townFemaleImage = null;
+  let tentSmallImg = null;
+  let tentLargeImg = null;
   let campNpcFrame = 0;
   let campNpcAnimId = null;
   let campNpcLastTs = 0;
@@ -383,6 +405,7 @@
     camp: 'Soldier Camp',
     grove: 'Apple Grove',
     town: 'Whore Town',
+    tent: 'Scout Camp',
   };
 
   function shuffleEarlyLandmarks() {
@@ -413,7 +436,11 @@
   }
 
   function landmarkKindAtLevel(state, level) {
-    const idx = Math.floor(Number(level) || 1) - 1;
+    const lvl = Math.floor(Number(level) || 1);
+    if (lvl === 4) {
+      return 'tent';
+    }
+    const idx = lvl - 1;
     if (idx < 0 || idx > 2) {
       return null;
     }
@@ -451,7 +478,7 @@
 
   function destinationNameForLevel(level) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    if (latestState && lvl >= 1 && lvl <= 3) {
+    if (latestState && lvl >= 1 && lvl <= 4) {
       const kind = landmarkKindAtLevel(latestState, lvl);
       if (kind && EARLY_LANDMARK_NAMES[kind]) {
         return EARLY_LANDMARK_NAMES[kind];
@@ -617,6 +644,8 @@
       partySize = Math.max(partySize, 3);
     } else if (state.level === 3) {
       partySize = Math.max(partySize, 4);
+    } else if (state.level === 4) {
+      partySize = Math.max(partySize, 5);
     }
     return {
       ...state,
@@ -633,14 +662,19 @@
   }
 
   function companionCountFromState(state) {
-    return Math.max(1, Math.min(4, Math.floor((state && state.partySize) || 1)));
+    return Math.max(1, Math.min(5, Math.floor((state && state.partySize) || 1)));
   }
 
-  /** Landmarks already recruited, in journey order (matches earlyLandmarkOrder). */
+  /** Recruited companions: Scout Camp guard leads on the right; early recruits trail left. */
   function recruitedLandmarkKinds(state) {
     const order = earlyLandmarkOrderFromState(state);
-    const count = Math.min(3, Math.max(0, companionCountFromState(state) - 1));
-    return order.slice(0, count);
+    const party = companionCountFromState(state);
+    const earlyCount = Math.min(3, Math.max(0, party - 1));
+    const kinds = order.slice(0, earlyCount);
+    if (party >= 5) {
+      kinds.unshift('tent');
+    }
+    return kinds;
   }
 
   function hasRecruitedKind(state, kind) {
@@ -685,7 +719,10 @@
   }
 
   function setCameraTargetForParty(partySize) {
-    const n = Math.max(1, Math.floor(partySize || 1));
+    const leftTrail = activeCompanionSlots(latestState).filter((slot) => slot.side !== 'right')
+      .length;
+    const n = Math.max(1, leftTrail + 1);
+    void partySize;
     petLeadLeftTarget = PET_BASE_LEFT + Math.max(0, n - 1) * CAMERA_PAD_PER_MEMBER;
   }
 
@@ -871,8 +908,17 @@
     return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'town');
   }
 
+  function shouldShowTent(state) {
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'tent');
+  }
+
   function shouldShowLandmark(state) {
-    return shouldShowCamp(state) || shouldShowGrove(state) || shouldShowTown(state);
+    return (
+      shouldShowCamp(state) ||
+      shouldShowGrove(state) ||
+      shouldShowTown(state) ||
+      shouldShowTent(state)
+    );
   }
 
   function landmarkKindForState(state) {
@@ -895,8 +941,21 @@
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
     const leftOffset =
-      landmarkKind === 'town' ? -13.5 : landmarkKind === 'grove' ? -8.0 : CAMP_PIECES[0].ox;
-    const rightOffset = landmarkKind === 'town' ? 13.5 : landmarkKind === 'grove' ? 8.0 : 5.5;
+      landmarkKind === 'town'
+        ? -13.5
+        : landmarkKind === 'grove'
+          ? -8.0
+          : landmarkKind === 'tent'
+            ? -4.0
+            : CAMP_PIECES[0].ox;
+    const rightOffset =
+      landmarkKind === 'town'
+        ? 13.5
+        : landmarkKind === 'grove'
+          ? 8.0
+          : landmarkKind === 'tent'
+            ? 4.0
+            : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -977,6 +1036,12 @@
         right: campPotWorldX + 13.5 * u + 8,
       };
     }
+    if (landmarkKind === 'tent') {
+      return {
+        left: campPotWorldX - 4.0 * u - 8,
+        right: campPotWorldX + 4.0 * u + 8,
+      };
+    }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
     // Include knights sitting beside both tents.
     const right = campPotWorldX + 5.5 * u + 8;
@@ -1046,6 +1111,27 @@
       }
       ctx.drawImage(img, dx, height - drawH, drawW, drawH);
     });
+  }
+
+  function paintTentCamp(ctx, height) {
+    if (!campActive || landmarkKind !== 'tent' || !tentSmallImg || !tentLargeImg) {
+      return;
+    }
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    const drawTent = (img, ox, scale) => {
+      const naturalW = img.naturalWidth || img.width;
+      const naturalH = img.naturalHeight || img.height;
+      const drawW = Math.round(naturalW * scale);
+      const drawH = Math.round(naturalH * scale);
+      const dx = Math.round(campPotWorldX + ox * u - decorScroll - drawW / 2);
+      if (dx + drawW < 0 || dx > width) {
+        return;
+      }
+      ctx.drawImage(img, dx, height - drawH, drawW, drawH);
+    };
+    drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE * 0.85);
+    drawTent(tentLargeImg, TENT_LARGE_OX, TENT_DISPLAY_SCALE);
   }
 
   function positionCampNpc() {
@@ -1121,6 +1207,32 @@
     companion3El.hidden = false;
     companion3El.style.left = `${screenX}px`;
     companion3El.style.bottom = '0';
+  }
+
+  function shouldShowTentNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'tent' &&
+        latestState &&
+        !hasRecruitedKind(latestState, 'tent')
+    );
+  }
+
+  function positionTentNpc() {
+    if (!companion4El) {
+      return;
+    }
+    if (!shouldShowTentNpc()) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion4El)) {
+        companion4El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + TENT_NPC_OX * u - decorScroll);
+    companion4El.hidden = false;
+    companion4El.style.left = `${screenX}px`;
+    companion4El.style.bottom = '0';
   }
 
   function positionCampExtra(extra, frameIndex) {
@@ -1397,6 +1509,37 @@
     }
   }
 
+  function drawTentNpcFrame(frameIndex) {
+    if (!companion4El || !campNpcImage || !shouldShowTentNpc()) {
+      return;
+    }
+    const img = campNpcImage;
+    const cols = 11;
+    const rows = 14;
+    const cellW = Math.floor(img.naturalWidth / cols);
+    const cellH = Math.floor(img.naturalHeight / rows);
+    const row = TENT_NPC_ROWS[frameIndex % TENT_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion4El.width = Math.round(size * dpr);
+    companion4El.height = Math.round(size * dpr);
+    companion4El.style.width = `${size}px`;
+    companion4El.style.height = `${size}px`;
+    const ctx = companion4El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, TENT_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, TENT_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex) {
     const el = slot && slot.el;
     const image =
@@ -1458,7 +1601,16 @@
         el.hidden = true;
       }
     });
-    active.forEach((slot, index) => {
+    const rightSlots = active.filter((slot) => slot.side === 'right');
+    const leftSlots = active.filter((slot) => slot.side !== 'right');
+    rightSlots.forEach((slot, index) => {
+      const el = slot.el;
+      const left = petLeft + SPRITE_DISPLAY * 0.72 + index * COMPANION_FOLLOW_GAP;
+      el.hidden = false;
+      el.style.left = `${Math.round(left)}px`;
+      el.style.bottom = '0';
+    });
+    leftSlots.forEach((slot, index) => {
       const el = slot.el;
       const left = Math.max(-20, petLeft - (index + 1) * COMPANION_FOLLOW_GAP);
       el.hidden = false;
@@ -1507,6 +1659,10 @@
       if (shouldShowTownNpc()) {
         drawTownNpcFrame(campNpcFrame);
         positionTownNpc();
+      }
+      if (shouldShowTentNpc()) {
+        drawTentNpcFrame(campNpcFrame);
+        positionTentNpc();
       }
       if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
@@ -1586,6 +1742,21 @@
     }
   }
 
+  async function prepareTentArt() {
+    const smallSrc = appEl.getAttribute('data-tent-small') || appEl.dataset.tentSmall;
+    const largeSrc = appEl.getAttribute('data-tent-large') || appEl.dataset.tentLarge;
+    if (smallSrc) {
+      tentSmallImg = makeBlackTransparent(await loadImage(smallSrc));
+    }
+    if (largeSrc) {
+      tentLargeImg = makeBlackTransparent(await loadImage(largeSrc));
+    }
+    if (campActive) {
+      startCampNpcAnim();
+      paintDecor();
+    }
+  }
+
   function onArrivedAtDestination() {
     travelEnabled = false;
     stopGroundScroll();
@@ -1622,6 +1793,9 @@
     }
     if (companion3El && !hasRecruitedKind(latestState, 'town')) {
       companion3El.hidden = true;
+    }
+    if (companion4El && !hasRecruitedKind(latestState, 'tent')) {
+      companion4El.hidden = true;
     }
     if (departBtnEl) {
       departBtnEl.hidden = true;
@@ -1673,13 +1847,18 @@
         ? GROVE_NPC_OX
         : landmarkKind === 'town'
           ? TOWN_NPC_OX
-          : 0.85;
+          : landmarkKind === 'tent'
+            ? TENT_NPC_OX
+            : 0.85;
     return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
-  /** Recruit is in their future follow slot behind the existing party trail. */
+  /** Recruit is in their future follow slot (left trail or right escort). */
   function recruitAtFollowSlot(recruitSlotIndex) {
     const petLeft = petEl ? petEl.offsetLeft : petLeadLeft;
+    if (landmarkKind === 'tent') {
+      return getRecruitScreenLeft() <= petLeft + SPRITE_DISPLAY * 0.72 + 0.5;
+    }
     return (
       getRecruitScreenLeft() <=
       petLeft - (recruitSlotIndex + 1) * COMPANION_FOLLOW_GAP + 0.5
@@ -1691,6 +1870,8 @@
       positionGroveNpc();
     } else if (landmarkKind === 'town') {
       positionTownNpc();
+    } else if (landmarkKind === 'tent') {
+      positionTentNpc();
     } else {
       positionCampNpc();
     }
@@ -1701,6 +1882,8 @@
       drawGroveNpcFrame(frameIndex);
     } else if (landmarkKind === 'town') {
       drawTownNpcFrame(frameIndex);
+    } else if (landmarkKind === 'tent') {
+      drawTentNpcFrame(frameIndex);
     } else {
       drawCampNpcFrame(frameIndex);
     }
@@ -2012,6 +2195,7 @@
     positionCampNpc();
     positionGroveNpc();
     positionTownNpc();
+    positionTentNpc();
     positionDepartButton();
   }
 
@@ -2031,6 +2215,7 @@
       paintCamp(ctx, height);
       paintGrove(ctx, height);
       paintTown(ctx, height);
+      paintTentCamp(ctx, height);
     }
   }
 
@@ -3612,6 +3797,10 @@
 
   prepareTownArt().catch((error) => {
     console.error('[travelling-kingdom] town art prep failed', error);
+  });
+
+  prepareTentArt().catch((error) => {
+    console.error('[travelling-kingdom] tent art prep failed', error);
   });
 
   prepareParallax().catch((error) => {
