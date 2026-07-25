@@ -16,6 +16,7 @@
   const petEl = document.getElementById('pet');
   const petSpriteEl = document.getElementById('pet-sprite');
   const campNpcEl = document.getElementById('camp-npc');
+  const companion2El = document.getElementById('companion-2');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -98,12 +99,12 @@
   const CAMP_NPC_COL = 3; // male sheet column 4 (1-based)
   const CAMP_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
   const CAMP_NPC_FPS = 5;
-  /** Lead X inset from the left edge (solo). Higher = more room for the trail. */
-  const PET_BASE_LEFT = 36;
+  /** Lead X inset from the left edge (solo). */
+  const PET_BASE_LEFT = 28;
   /** Extra lead inset per party member so the trail fits on screen. */
-  const CAMERA_PAD_PER_MEMBER = 44;
+  const CAMERA_PAD_PER_MEMBER = 36;
   /** Companion trails this far behind the leader (px). */
-  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.58);
+  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.45);
   /** Camera settle speed — lower = slower, smoother ease to lead position. */
   const CAMERA_EASE_RATE = 0.85;
   /** Max camera ease (px/s); keep well below floor scroll so it reads as pan, not slide. */
@@ -140,6 +141,22 @@
       ox: 3.6,
       size: 88,
       el: null,
+    },
+  ];
+  const COMPANION_SLOTS = [
+    {
+      id: 'hooded',
+      el: campNpcEl,
+      minParty: 2,
+      sheet: 'male',
+      col: 3,
+    },
+    {
+      id: 'forest',
+      el: companion2El,
+      minParty: 3,
+      sheet: 'female',
+      col: 1,
     },
   ];
 
@@ -493,20 +510,28 @@
     return n === 1 ? '1 person' : `${n} persons`;
   }
 
+  function companionCountFromState(state) {
+    return Math.max(1, Math.min(3, Math.floor((state && state.partySize) || 1)));
+  }
+
+  function hasCompanions() {
+    return companionCountFromState(latestState) >= 2;
+  }
+
   function syncCompanionFromState(state) {
     if (recruitBusy) {
       return;
     }
-    const nextJoined = Boolean(state && (state.partySize || 1) >= 2);
+    const nextJoined = companionCountFromState(state) >= 2;
     companionJoined = nextJoined;
     setCameraTargetForParty(state && state.partySize ? state.partySize : 1);
     if (companionJoined) {
-      positionCompanionBehindPet();
-      drawCompanionWalkFrame(walkFrame || 0);
+      positionCompanionsBehindPet();
+      drawActiveCompanionWalkFrames(walkFrame || 0);
       // Only snap on large mismatch (reload); otherwise ease.
       if (Math.abs(petLeadLeft - petLeadLeftTarget) > CAMERA_PAD_PER_MEMBER * 2.5) {
         applyPetLeft(petLeadLeftTarget);
-        positionCompanionBehindPet();
+        positionCompanionsBehindPet();
       } else if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
         startCameraEase();
       }
@@ -549,7 +574,7 @@
         if (Math.abs(diff) < 0.5) {
           applyPetLeft(petLeadLeftTarget);
           if (companionJoined) {
-            positionCompanionBehindPet();
+            positionCompanionsBehindPet();
           }
           cameraAnimId = null;
           const queue = startCameraEase._queue || [];
@@ -570,7 +595,7 @@
         const step = Math.abs(eased) < Math.abs(capped) ? eased : capped;
         applyPetLeft(petLeadLeft + step);
         if (companionJoined) {
-          positionCompanionBehindPet();
+          positionCompanionsBehindPet();
         }
       }
       lastTs = timestamp;
@@ -970,23 +995,33 @@
     }
   }
 
-  function drawCompanionWalkFrame(frameIndex) {
-    if (!campNpcEl || !campNpcImage || !companionJoined) {
+  function drawCompanionWalkFrame(slot, frameIndex) {
+    const el = slot && slot.el;
+    const image =
+      slot && slot.sheet === 'female'
+        ? (findCharacter('female-0') || {}).sheetImage
+        : campNpcImage;
+    if (
+      !el ||
+      !image ||
+      !latestState ||
+      companionCountFromState(latestState) < slot.minParty
+    ) {
       return;
     }
-    const img = campNpcImage;
-    const cols = 11;
+    const img = image;
+    const cols = slot.sheet === 'female' ? 12 : 11;
     const rows = 14;
     const cellW = Math.floor(img.naturalWidth / cols);
     const cellH = Math.floor(img.naturalHeight / rows);
     const row = WALK_ROW_START + (frameIndex % WALK_FRAME_COUNT);
     const dpr = window.devicePixelRatio || 1;
     const size = SPRITE_DISPLAY;
-    campNpcEl.width = Math.round(size * dpr);
-    campNpcEl.height = Math.round(size * dpr);
-    campNpcEl.style.width = `${size}px`;
-    campNpcEl.style.height = `${size}px`;
-    const ctx = campNpcEl.getContext('2d');
+    el.width = Math.round(size * dpr);
+    el.height = Math.round(size * dpr);
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    const ctx = el.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, size, size);
@@ -996,7 +1031,7 @@
     ctx.scale(-1, 1);
     ctx.drawImage(
       img,
-      CAMP_NPC_COL * cellW,
+      slot.col * cellW,
       row * cellH,
       cellW,
       cellH,
@@ -1008,18 +1043,30 @@
     ctx.restore();
   }
 
-  function positionCompanionBehindPet() {
-    if (!campNpcEl || !companionJoined || !petEl) {
-      if (campNpcEl && !companionJoined && !campActive) {
-        campNpcEl.hidden = true;
-      }
+  function drawActiveCompanionWalkFrames(frameIndex) {
+    COMPANION_SLOTS.forEach((slot) => drawCompanionWalkFrame(slot, frameIndex));
+  }
+
+  function positionCompanionsBehindPet() {
+    if (!petEl) {
       return;
     }
-    // Trail behind the player (left of pet while walking right).
-    const left = Math.max(-20, petEl.offsetLeft - COMPANION_FOLLOW_GAP);
-    campNpcEl.hidden = false;
-    campNpcEl.style.left = `${left}px`;
-    campNpcEl.style.bottom = '0';
+    const petLeft = petEl.offsetLeft;
+    COMPANION_SLOTS.forEach((slot, index) => {
+      const el = slot.el;
+      if (!el) {
+        return;
+      }
+      const active = latestState && (latestState.partySize || 1) >= slot.minParty;
+      if (!active) {
+        el.hidden = true;
+        return;
+      }
+      const left = Math.max(-20, petLeft - (index + 1) * COMPANION_FOLLOW_GAP);
+      el.hidden = false;
+      el.style.left = `${left}px`;
+      el.style.bottom = '0';
+    });
   }
 
   function stopCampNpcAnim() {
@@ -1282,8 +1329,8 @@
     departing = false;
     updateMetersUi(latestState);
     // Companion owns the hooded canvas now — keep tents/extras, not idle-at-pot.
-    positionCompanionBehindPet();
-    drawCompanionWalkFrame(0);
+    positionCompanionsBehindPet();
+    drawActiveCompanionWalkFrames(0);
 
     const character = findCharacter(latestState && latestState.characterId);
     if (character && character.sheetImage) {
@@ -1295,7 +1342,7 @@
     setCameraTargetForParty(latestState.partySize || 2);
     syncCampWorldPosition();
     paintDecor();
-    positionCompanionBehindPet();
+    positionCompanionsBehindPet();
 
     if (latestState && latestState.characterId && (activeScreen || 'home') === 'home') {
       enableTravelAccrual();
@@ -2690,8 +2737,8 @@
       activeWalkCharacterId = characterId;
       drawWalkFrame(character, walkFrame);
       if (companionJoined) {
-        drawCompanionWalkFrame(walkFrame);
-        positionCompanionBehindPet();
+        drawActiveCompanionWalkFrames(walkFrame);
+        positionCompanionsBehindPet();
       }
     }
 
@@ -2727,8 +2774,8 @@
 
       drawWalkFrame(active, walkFrame);
       if (companionJoined) {
-        drawCompanionWalkFrame(walkFrame);
-        positionCompanionBehindPet();
+        drawActiveCompanionWalkFrames(walkFrame);
+        positionCompanionsBehindPet();
       }
       walkAnimId = requestAnimationFrame(tick);
     };

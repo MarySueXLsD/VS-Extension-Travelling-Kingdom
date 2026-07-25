@@ -651,6 +651,7 @@ input {
 }
 
 .camp-npc,
+.companion-slot,
 .camp-actor {
   position: absolute;
   left: 0;

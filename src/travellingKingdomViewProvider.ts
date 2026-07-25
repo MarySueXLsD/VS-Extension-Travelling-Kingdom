@@ -254,6 +254,12 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     const decorUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'decor.png')
     );
+    const appleTreeUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'apple_tree.png')
+    );
+    const willowTreeUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'willow_tree.png')
+    );
     const destinationsUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'destinations.json')
     );
@@ -293,6 +299,8 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     data-destinations="${destinationsUri}"
     data-floor-tiles="${floorTilesUri}"
     data-decor="${decorUri}"
+    data-apple-tree="${appleTreeUri}"
+    data-willow-tree="${willowTreeUri}"
     data-bg1="${bgLayerUris[0]}"
     data-bg2="${bgLayerUris[1]}"
     data-bg3="${bgLayerUris[2]}"
@@ -376,6 +384,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           </button>
           <canvas id="camp-decor" class="camp-decor" aria-hidden="true"></canvas>
           <canvas id="camp-npc" class="camp-npc" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-2" class="camp-npc companion-slot" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
