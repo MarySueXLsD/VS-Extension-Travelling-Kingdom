@@ -122,7 +122,7 @@
   const STONE_DECOR = { row: 5, col: 0, w: 1, h: 1, ox: -0.55 };
   const HOUSE_DISPLAY_SCALE = 1.25;
   const VILLAGE_BUILDING_SCALE = 1.15;
-  const VILLAGE_STALL_SCALE = 1.0;
+  const VILLAGE_STALL_SCALE = 1.35;
   const VILLAGE_TAVERN_SCALE = 1.2;
   /** Market Village (level 6) — wide street; bishop by tavern. */
   const MARKET_DEST_LEVEL = 6;
@@ -194,9 +194,12 @@
   /** Lead X inset from the left edge (solo). */
   const PET_BASE_LEFT = 32;
   /** Extra lead inset per party member so the trail fits on screen. */
-  const CAMERA_PAD_PER_MEMBER = 32;
+  const CAMERA_PAD_PER_MEMBER = 36;
   /** Companion trails this far behind the leader (px). */
-  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.40);
+  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.46);
+  /** How close the hero stops to a recruit while speaking (px past pet left). */
+  const RECRUIT_SPEAK_GAP = Math.round(SPRITE_DISPLAY * 0.28);
+  const IDLE_NPC_ROWS = [1, 2, 3, 4, 5];
   /** Camera settle speed — lower = slower, smoother ease to lead position. */
   const CAMERA_EASE_RATE = 0.85;
   /** Max camera ease (px/s); keep well below floor scroll so it reads as pan, not slide. */
@@ -441,6 +444,9 @@
   let lastGroundTs = 0;
   let walkFrame = 0;
   let walkAnimId = null;
+  let partyIdleAnimId = null;
+  let partyIdleFrame = 0;
+  let partyIdleLastTs = 0;
   let lastWalkTs = 0;
   let walkBoostUntil = 0;
   let activeWalkCharacterId = null;
@@ -784,7 +790,7 @@
     return Math.max(1, Math.min(8, Math.floor((state && state.partySize) || 1)));
   }
 
-  /** Tent on the right; early + stone + bishop + nun trail left (nun last). */
+  /** Guard on the right; left trail newest-closest (reversed chronology). */
   function recruitedLandmarkKinds(state) {
     const order = earlyLandmarkOrderFromState(state);
     const party = companionCountFromState(state);
@@ -795,18 +801,21 @@
     const reserved =
       (hasTent ? 1 : 0) + (hasStone ? 1 : 0) + (hasBishop ? 1 : 0) + (hasNun ? 1 : 0);
     const earlyCount = Math.min(3, Math.max(0, party - 1 - reserved));
-    const kinds = order.slice(0, earlyCount);
-    if (hasTent) {
-      kinds.unshift('tent');
-    }
+    // Chronological left recruits (oldest → newest).
+    const leftChrono = order.slice(0, earlyCount);
     if (hasStone) {
-      kinds.push('stone');
+      leftChrono.push('stone');
     }
     if (hasBishop) {
-      kinds.push('market');
+      leftChrono.push('market');
     }
     if (hasNun) {
-      kinds.push('cloister');
+      leftChrono.push('cloister');
+    }
+    // Newest closest to hero on the left trail.
+    const kinds = leftChrono.slice().reverse();
+    if (hasTent) {
+      kinds.unshift('tent');
     }
     return kinds;
   }
@@ -1301,7 +1310,7 @@
       }
       ctx.drawImage(img, dx, height - drawH, drawW, drawH);
     };
-    drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE * 0.85);
+    drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE);
     drawTent(tentLargeImg, TENT_LARGE_OX, TENT_DISPLAY_SCALE);
   }
 
@@ -1967,7 +1976,7 @@
     }
   }
 
-  function drawCompanionWalkFrame(slot, frameIndex) {
+  function drawCompanionWalkFrame(slot, frameIndex, options) {
     const el = slot && slot.el;
     const image =
       slot && slot.sheet === 'female'
@@ -1977,12 +1986,15 @@
     if (!el || !image || !active.some((s) => s.id === slot.id)) {
       return;
     }
+    const idle = Boolean(options && options.idle);
     const img = image;
     const cols = slot.sheet === 'female' ? 12 : 11;
     const rows = 14;
     const cellW = Math.floor(img.naturalWidth / cols);
     const cellH = Math.floor(img.naturalHeight / rows);
-    const row = WALK_ROW_START + (frameIndex % WALK_FRAME_COUNT);
+    const row = idle
+      ? IDLE_NPC_ROWS[frameIndex % IDLE_NPC_ROWS.length]
+      : WALK_ROW_START + (frameIndex % WALK_FRAME_COUNT);
     const dpr = window.devicePixelRatio || 1;
     const size = SPRITE_DISPLAY;
     el.width = Math.round(size * dpr);
@@ -2013,6 +2025,12 @@
 
   function drawActiveCompanionWalkFrames(frameIndex) {
     activeCompanionSlots(latestState).forEach((slot) => drawCompanionWalkFrame(slot, frameIndex));
+  }
+
+  function drawActiveCompanionIdleFrames(frameIndex) {
+    activeCompanionSlots(latestState).forEach((slot) =>
+      drawCompanionWalkFrame(slot, frameIndex, { idle: true })
+    );
   }
 
   function positionCompanionsBehindPet() {
@@ -2258,6 +2276,7 @@
     positionDepartButton();
     paintDecor();
     updateMetersUi(latestState);
+    startPartyIdleAnim();
   }
 
   function clearCamp() {
@@ -2303,6 +2322,7 @@
     if (!keepDeparting) {
       departing = false;
     }
+    stopPartyIdleAnim();
     if (departBtnEl) {
       departBtnEl.disabled = false;
       departBtnEl.hidden = true;
@@ -2355,16 +2375,14 @@
     return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
-  /** Recruit is in their future follow slot (left trail or right escort). */
+  /** Recruit is close enough to speak / join (tighter than trail follow gap). */
   function recruitAtFollowSlot(recruitSlotIndex) {
     const petLeft = petEl ? petEl.offsetLeft : petLeadLeft;
+    void recruitSlotIndex;
     if (landmarkKind === 'tent') {
-      return getRecruitScreenLeft() <= petLeft + SPRITE_DISPLAY * 0.72 + 0.5;
+      return getRecruitScreenLeft() <= petLeft + RECRUIT_SPEAK_GAP + 0.5;
     }
-    return (
-      getRecruitScreenLeft() <=
-      petLeft - (recruitSlotIndex + 1) * COMPANION_FOLLOW_GAP + 0.5
-    );
+    return getRecruitScreenLeft() <= petLeft - RECRUIT_SPEAK_GAP + 0.5;
   }
 
   function positionRecruitNpc() {
@@ -2412,6 +2430,7 @@
     companionJoined = false;
     npcFaceRight = false;
     petFaceRight = true;
+    stopPartyIdleAnim();
     if (departBtnEl) {
       departBtnEl.hidden = true;
       departBtnEl.disabled = true;
@@ -2429,11 +2448,23 @@
     const beginFaceCeremony = (timestamp) => {
       stopGroundScroll();
       stopWalkAnimation();
+      stopPartyIdleAnim();
       travelEnabled = false;
       recruitPhase = 'petFace';
       petFaceRight = false;
+      // Pull the hero closer to the recruit for the speaking beat.
+      const recruitX = getRecruitScreenLeft();
+      const speakLeft =
+        landmarkKind === 'tent'
+          ? Math.max(8, Math.min(petLeadLeft, recruitX - SPRITE_DISPLAY * 0.85))
+          : Math.max(8, recruitX - SPRITE_DISPLAY - RECRUIT_SPEAK_GAP);
+      applyPetLeft(speakLeft);
+      positionCompanionsBehindPet();
       if (character && character.sheetImage) {
-        drawWalkFrame(character, 0, false);
+        drawIdleFrame(character, 0, false);
+      }
+      if (hasActiveCompanionSlots()) {
+        drawActiveCompanionIdleFrames(0);
       }
       positionRecruitNpc();
       phaseUntil = timestamp + RECRUIT_FACE_MS;
@@ -2464,6 +2495,12 @@
         }
       } else if (recruitPhase === 'petFace') {
         positionRecruitNpc();
+        if (character && character.sheetImage) {
+          drawIdleFrame(character, campNpcFrame, false);
+        }
+        if (hasActiveCompanionSlots()) {
+          drawActiveCompanionIdleFrames(campNpcFrame);
+        }
         if (timestamp >= phaseUntil) {
           recruitPhase = 'npcFace';
           npcFaceRight = true;
@@ -2474,11 +2511,17 @@
       } else if (recruitPhase === 'npcFace') {
         drawRecruitNpcFrame(campNpcFrame);
         positionRecruitNpc();
+        if (character && character.sheetImage) {
+          drawIdleFrame(character, campNpcFrame, false);
+        }
+        if (hasActiveCompanionSlots()) {
+          drawActiveCompanionIdleFrames(campNpcFrame);
+        }
         if (timestamp >= phaseUntil) {
           recruitPhase = 'petResume';
           petFaceRight = true;
           if (character && character.sheetImage) {
-            drawWalkFrame(character, 0, true);
+            drawIdleFrame(character, 0, true);
           }
           phaseUntil = timestamp + 80;
         }
@@ -3730,6 +3773,7 @@
     if (isSelecting) {
       stopGroundScroll();
       stopWalkAnimation();
+      stopPartyIdleAnim();
       resetTravelAccrual();
       requestAnimationFrame(() => {
         paintRoyalFrame();
@@ -3925,6 +3969,99 @@
     }
   }
 
+  function drawIdleFrame(character, frameIndex, faceRight) {
+    if (!petSpriteEl || !character || !character.sheetImage) {
+      return;
+    }
+    const face = faceRight !== false;
+    const img = character.sheetImage;
+    const cellW = Math.floor(img.naturalWidth / character.cols);
+    const cellH = Math.floor(img.naturalHeight / character.rows);
+    const row = IDLE_NPC_ROWS[frameIndex % IDLE_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    petSpriteEl.width = Math.round(size * dpr);
+    petSpriteEl.height = Math.round(size * dpr);
+    petSpriteEl.style.width = `${size}px`;
+    petSpriteEl.style.height = `${size}px`;
+    const ctx = petSpriteEl.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (face) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, character.col * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, character.col * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
+  function stopPartyIdleAnim() {
+    if (partyIdleAnimId !== null) {
+      cancelAnimationFrame(partyIdleAnimId);
+      partyIdleAnimId = null;
+    }
+    partyIdleLastTs = 0;
+  }
+
+  function startPartyIdleAnim() {
+    if (
+      partyIdleAnimId !== null ||
+      !latestState ||
+      !latestState.characterId ||
+      !latestState.awaitingDeparture ||
+      recruitBusy ||
+      departing
+    ) {
+      return;
+    }
+    stopWalkAnimation();
+    const character = findCharacter(latestState.characterId);
+    if (character && character.sheetImage) {
+      drawIdleFrame(character, partyIdleFrame, true);
+    }
+    if (hasActiveCompanionSlots()) {
+      drawActiveCompanionIdleFrames(partyIdleFrame);
+      positionCompanionsBehindPet();
+    }
+    const tick = (timestamp) => {
+      if (
+        !latestState ||
+        !latestState.awaitingDeparture ||
+        recruitBusy ||
+        departing ||
+        appEl.classList.contains('selecting-character')
+      ) {
+        partyIdleAnimId = null;
+        partyIdleLastTs = 0;
+        return;
+      }
+      if (partyIdleLastTs > 0) {
+        const frameDuration = 1000 / CAMP_NPC_FPS;
+        while (timestamp - partyIdleLastTs >= frameDuration) {
+          partyIdleFrame = (partyIdleFrame + 1) % IDLE_NPC_ROWS.length;
+          partyIdleLastTs += frameDuration;
+        }
+      } else {
+        partyIdleLastTs = timestamp;
+      }
+      const active = findCharacter(latestState.characterId);
+      if (active && active.sheetImage) {
+        drawIdleFrame(active, partyIdleFrame, true);
+      }
+      if (hasActiveCompanionSlots()) {
+        drawActiveCompanionIdleFrames(partyIdleFrame);
+        positionCompanionsBehindPet();
+      }
+      positionDepartButton();
+      partyIdleAnimId = requestAnimationFrame(tick);
+    };
+    partyIdleAnimId = requestAnimationFrame(tick);
+  }
+
   function stopWalkAnimation() {
     if (walkAnimId !== null) {
       cancelAnimationFrame(walkAnimId);
@@ -3939,6 +4076,7 @@
     if (!character || !character.sheetImage) {
       return;
     }
+    stopPartyIdleAnim();
 
     if (activeWalkCharacterId !== characterId) {
       walkFrame = 0;
@@ -4028,6 +4166,7 @@
       confirming = false;
       charConfirmEl.disabled = !portraitsReady;
       stopWalkAnimation();
+      stopPartyIdleAnim();
       clearCamp();
       setScreen('character-select');
       setTrackPosition(trackIndex, false);
@@ -4061,6 +4200,7 @@
       }
       positionDepartButton();
       paintDecor();
+      startPartyIdleAnim();
     } else if ((wasAwaiting || departing) && !state.awaitingDeparture) {
       if (recruitBusy) {
         latestState = {

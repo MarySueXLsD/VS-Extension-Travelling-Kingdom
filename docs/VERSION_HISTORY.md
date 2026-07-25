@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.50.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.53.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -56,7 +56,10 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.47 | `travelling-kingdom-0.0.47.vsix` | 1.08 MB | 61 | Cache-bust destinations.json; show version in Settings |
 | 0.0.48 | `travelling-kingdom-0.0.48.vsix` | 1.08 MB | 61 | Sparse grove, correct recruit looks, linger landmark, 2× town houses |
 | 0.0.49 | `travelling-kingdom-0.0.49.vsix` | 1.08 MB | 61 | Settings version label; larger houses; wider tree gaps |
-| 0.0.50 | `travelling-kingdom-0.0.50.vsix` | 1.11 MB | 66 | Current: all legs 50m; Scout Camp tents + right-side halberd; tree_apple rename |
+| 0.0.50 | `travelling-kingdom-0.0.50.vsix` | 1.11 MB | 66 | All legs 50m; Scout Camp tents + right-side halberd; tree_apple rename |
+| 0.0.51 | `travelling-kingdom-0.0.51.vsix` | 1.11 MB | 66 | Wayside Stone traveler recruit |
+| 0.0.52 | `travelling-kingdom-0.0.52.vsix` | 1.12 MB | 66 | Market + Cloister villages; bishop/nun recruits |
+| 0.0.53 | `travelling-kingdom-0.0.53.vsix` | 1.12 MB | 66 | Current: tent/stall scales; newest-left formation; Continue idle |
 
 ---
 
@@ -415,6 +418,13 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 - Apple grove asset path: `apple_tree.png` → `tree_apple.png`.
 - Level 4 **Scout Camp**: `tent_small` + `tent_large`; male sheet column 6 (halberd) idles by the large tent.
 - Halberd recruit joins as the **first** escort on the **right** of the hero (`#companion-4`); party size up to **5**.
+
+## 0.0.53 — Formation, scales, Continue idle
+
+- Small tent matches large tent scale; market stalls **1.35×**.
+- Non-guard recruits stand newest-closest behind the hero; guard stays on the right; camera/gap padded so the line fits.
+- Recruit speak/meet stops closer to the NPC.
+- While Continue is showing, pet + squad use standing idle frames.
 
 ---
 
