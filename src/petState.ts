@@ -238,11 +238,13 @@ export class PetStateStore {
       return current;
     }
     const now = Date.now();
-    // Soldier Camp (level 1): hooded traveler joins the party.
-    const partySize =
-      current.level === 1
-        ? Math.max(current.partySize || 1, 2)
-        : Math.max(1, current.partySize || 1);
+    const level = current.level;
+    let partySize = Math.max(1, current.partySize || 1);
+    if (level === 1) {
+      partySize = Math.max(partySize, 2);
+    } else if (level === 2) {
+      partySize = Math.max(partySize, 3);
+    }
     const next: PetState = {
       ...current,
       level: current.level + 1,

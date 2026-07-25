@@ -473,10 +473,12 @@
   }
 
   function applyDepartLocal(state) {
-    const partySize =
-      state.level === CAMP_DEST_LEVEL
-        ? Math.max(state.partySize || 1, 2)
-        : Math.max(1, state.partySize || 1);
+    let partySize = Math.max(1, state.partySize || 1);
+    if (state.level === 1) {
+      partySize = Math.max(partySize, 2);
+    } else if (state.level === 2) {
+      partySize = Math.max(partySize, 3);
+    }
     return {
       ...state,
       level: state.level + 1,
