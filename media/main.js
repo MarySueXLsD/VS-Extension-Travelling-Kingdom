@@ -88,6 +88,19 @@
   const SPRITE_DISPLAY = 96;
   /** Soldier Camp (level 1) landmark — decor.png pieces, 0-based sheet coords. */
   const CAMP_DEST_LEVEL = 1;
+  /** Apple Grove (level 2) landmark — orchard art is bottom-aligned to the trail. */
+  const GROVE_DEST_LEVEL = 2;
+  const GROVE_APPLE_COUNT = 30;
+  const GROVE_WILLOW_OX = 0.2;
+  const GROVE_NPC_OX = 0.85;
+  const GROVE_NPC_COL = 1; // female sheet column 2 (1-based)
+  const GROVE_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
+  // Fixed offsets preserve the same orchard silhouette after every reload.
+  const GROVE_APPLE_OX = [
+    -5.5, -5.1, -4.8, -4.4, -4.0, -3.7, -3.3, -2.9, -2.6, -2.2,
+    -1.8, -1.5, -1.1, -0.8, -0.45, 0.7, 1.05, 1.4, 1.75, 2.1,
+    2.45, 2.8, 3.15, 3.5, 3.85, 4.2, 4.55, 4.9, 5.2, 5.5,
+  ];
   const CAMP_PIECES = [
     { id: 'leftTent', row: 1, col: 0, w: 3, h: 2, ox: -3, oy: 0 },
     { id: 'barrels', row: 0, col: 3, w: 1, h: 1, ox: -3, oy: 0 },
@@ -218,10 +231,15 @@
   let decorNextSpawnX = 0;
   let campActive = false;
   let campPotWorldX = 0;
-  /** Once at/after the landmark, pot X stays fixed in world space until off-screen. */
+  /** Active shared landmark kind; camp variables retain their names for compatibility. */
+  let landmarkKind = null;
+  /** Once at/after the landmark, its anchor stays fixed in world space until off-screen. */
   let campWorldLocked = false;
   let campNpcImage = null;
   let campChars1Image = null;
+  let groveAppleImg = null;
+  let groveWillowImg = null;
+  let groveFemaleImage = null;
   let campNpcFrame = 0;
   let campNpcAnimId = null;
   let campNpcLastTs = 0;
@@ -719,8 +737,25 @@
     if (!state || !state.characterId) {
       return false;
     }
-    // Approach + arrival on destination 1. After depart, camp lingers via campWorldLocked.
     return state.level === CAMP_DEST_LEVEL;
+  }
+
+  function shouldShowGrove(state) {
+    return Boolean(state && state.characterId && state.level === GROVE_DEST_LEVEL);
+  }
+
+  function shouldShowLandmark(state) {
+    return shouldShowCamp(state) || shouldShowGrove(state);
+  }
+
+  function landmarkKindForState(state) {
+    if (shouldShowCamp(state)) {
+      return 'camp';
+    }
+    if (shouldShowGrove(state)) {
+      return 'grove';
+    }
+    return null;
   }
 
   function remainingMetersForCamp(state) {
@@ -735,8 +770,10 @@
   function isCampOffscreen() {
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
-    const left = campPotWorldX + CAMP_PIECES[0].ox * u - decorScroll;
-    const right = campPotWorldX + 5.5 * u - decorScroll;
+    const leftOffset = landmarkKind === 'grove' ? -5.5 : CAMP_PIECES[0].ox;
+    const rightOffset = 5.5;
+    const left = campPotWorldX + leftOffset * u - decorScroll;
+    const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
   }
 
@@ -756,8 +793,9 @@
       return;
     }
 
-    if (shouldShowCamp(latestState)) {
+    if (shouldShowLandmark(latestState)) {
       campActive = true;
+      landmarkKind = landmarkKindForState(latestState);
       if (latestState.awaitingDeparture || campWorldLocked) {
         if (!campWorldLocked) {
           campPotWorldX = decorScroll + getPetScreenX();
@@ -790,6 +828,12 @@
 
   function campBand() {
     const u = campUnit();
+    if (landmarkKind === 'grove') {
+      return {
+        left: campPotWorldX - 5.5 * u - 8,
+        right: campPotWorldX + 5.5 * u + 8,
+      };
+    }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
     // Include knights sitting beside both tents.
     const right = campPotWorldX + 5.5 * u + 8;
@@ -797,7 +841,7 @@
   }
 
   function paintCamp(ctx, height) {
-    if (!campActive || !decorImg) {
+    if (!campActive || landmarkKind !== 'camp' || !decorImg) {
       return;
     }
     const u = campUnit();
@@ -819,8 +863,27 @@
     });
   }
 
+  function paintGrove(ctx, height) {
+    if (!campActive || landmarkKind !== 'grove' || !groveAppleImg || !groveWillowImg) {
+      return;
+    }
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    const drawTree = (img, ox) => {
+      const drawW = img.width || img.naturalWidth;
+      const drawH = img.height || img.naturalHeight;
+      const dx = Math.round(campPotWorldX + ox * u - decorScroll - drawW / 2);
+      if (dx + drawW < 0 || dx > width) {
+        return;
+      }
+      ctx.drawImage(img, dx, height - drawH, drawW, drawH);
+    };
+    GROVE_APPLE_OX.slice(0, GROVE_APPLE_COUNT).forEach((ox) => drawTree(groveAppleImg, ox));
+    drawTree(groveWillowImg, GROVE_WILLOW_OX);
+  }
+
   function positionCampNpc() {
-    if (!campNpcEl || !campActive || companionJoined) {
+    if (!campNpcEl || !campActive || landmarkKind !== 'camp' || companionJoined) {
       if (campNpcEl && !companionJoined) {
         campNpcEl.hidden = true;
       }
@@ -834,9 +897,36 @@
     campNpcEl.style.bottom = '0';
   }
 
+  function shouldShowGroveNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'grove' &&
+        latestState &&
+        shouldShowGrove(latestState) &&
+        companionCountFromState(latestState) < 3
+    );
+  }
+
+  function positionGroveNpc() {
+    if (!companion2El) {
+      return;
+    }
+    if (!shouldShowGroveNpc()) {
+      if (!latestState || companionCountFromState(latestState) < 3) {
+        companion2El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + GROVE_NPC_OX * u - decorScroll);
+    companion2El.hidden = false;
+    companion2El.style.left = `${screenX}px`;
+    companion2El.style.bottom = '0';
+  }
+
   function positionCampExtra(extra, frameIndex) {
     const el = extra.el;
-    if (!el || !campActive || !campChars1Image) {
+    if (!el || !campActive || landmarkKind !== 'camp' || !campChars1Image) {
       if (el) {
         el.hidden = true;
       }
@@ -995,6 +1085,37 @@
     }
   }
 
+  function drawGroveNpcFrame(frameIndex) {
+    if (!companion2El || !groveFemaleImage || !shouldShowGroveNpc()) {
+      return;
+    }
+    const img = groveFemaleImage;
+    const cellW = Math.floor(img.naturalWidth / 12);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = GROVE_NPC_ROWS[frameIndex % GROVE_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion2El.width = Math.round(size * dpr);
+    companion2El.height = Math.round(size * dpr);
+    companion2El.style.width = `${size}px`;
+    companion2El.style.height = `${size}px`;
+    const ctx = companion2El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    ctx.drawImage(
+      img,
+      GROVE_NPC_COL * cellW,
+      row * cellH,
+      cellW,
+      cellH,
+      0,
+      0,
+      size,
+      size
+    );
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex) {
     const el = slot && slot.el;
     const image =
@@ -1098,11 +1219,15 @@
       } else {
         campNpcLastTs = timestamp;
       }
-      if (campActive && !companionJoined) {
+      if (campActive && landmarkKind === 'camp' && !companionJoined) {
         drawCampNpcFrame(campNpcFrame);
         positionCampNpc();
       }
-      if (campActive) {
+      if (shouldShowGroveNpc()) {
+        drawGroveNpcFrame(campNpcFrame);
+        positionGroveNpc();
+      }
+      if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
       }
       campNpcAnimId = requestAnimationFrame(tick);
@@ -1134,6 +1259,25 @@
     }
   }
 
+  async function prepareGroveArt() {
+    const appleSrc = appEl.getAttribute('data-apple-tree') || appEl.dataset.appleTree;
+    const willowSrc = appEl.getAttribute('data-willow-tree') || appEl.dataset.willowTree;
+    const femaleSrc = appEl.getAttribute('data-female-sheet') || appEl.dataset.femaleSheet;
+    if (appleSrc) {
+      groveAppleImg = makeBlackTransparent(await loadImage(appleSrc));
+    }
+    if (willowSrc) {
+      groveWillowImg = makeBlackTransparent(await loadImage(willowSrc));
+    }
+    if (femaleSrc) {
+      groveFemaleImage = await loadImage(femaleSrc);
+    }
+    if (campActive) {
+      startCampNpcAnim();
+      paintDecor();
+    }
+  }
+
   function onArrivedAtDestination() {
     travelEnabled = false;
     stopGroundScroll();
@@ -1142,6 +1286,7 @@
     campPotWorldX = decorScroll + getPetScreenX();
     campWorldLocked = true;
     campActive = true;
+    landmarkKind = landmarkKindForState(latestState);
     startCampNpcAnim();
     positionDepartButton();
     paintDecor();
@@ -1154,6 +1299,7 @@
       return;
     }
     campActive = false;
+    landmarkKind = null;
     campWorldLocked = false;
     stopCampNpcAnim();
     hideAllCampExtras();
@@ -1511,6 +1657,7 @@
 
     paintCampLayer(width, height, dpr);
     positionCampNpc();
+    positionGroveNpc();
     positionDepartButton();
   }
 
@@ -1528,6 +1675,7 @@
     ctx.clearRect(0, 0, width, height);
     if (campActive) {
       paintCamp(ctx, height);
+      paintGrove(ctx, height);
     }
   }
 
@@ -3100,6 +3248,10 @@
 
   prepareCampNpc().catch((error) => {
     console.error('[travelling-kingdom] camp npc prep failed', error);
+  });
+
+  prepareGroveArt().catch((error) => {
+    console.error('[travelling-kingdom] grove art prep failed', error);
   });
 
   prepareParallax().catch((error) => {
