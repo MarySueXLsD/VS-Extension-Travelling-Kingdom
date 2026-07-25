@@ -14,7 +14,8 @@ type WebviewMessage =
   | { type: 'action'; action: 'setDistanceUnit'; unit: DistanceUnit }
   | { type: 'action'; action: 'setMinimalUi'; enabled: boolean }
   | { type: 'action'; action: 'setMinimalBg'; enabled: boolean }
-  | { type: 'action'; action: 'depart' };
+  | { type: 'action'; action: 'depart' }
+  | { type: 'action'; action: 'reorderParty'; leftTrailOrder: string[] };
 
 const VALID_CHARACTER_IDS: ReadonlySet<string> = new Set(['female-0', 'male-7']);
 
@@ -209,6 +210,12 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
       return;
     }
 
+    if (message.action === 'reorderParty') {
+      const state = await this.store.reorderParty(message.leftTrailOrder);
+      this.postState(state);
+      return;
+    }
+
     if (message.action === 'petClick' || message.action === 'feed') {
       const state = await this.store.applyAction(message.action);
       this.postState(state);
@@ -267,6 +274,12 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     );
     const tentLargeUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'tent_large.png')
+    );
+    const shopUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'shop.png')
+    );
+    const stableUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'stable.png')
     );
     const houseUris = [1, 2, 3, 4, 5, 6].map((n) =>
       webview.asWebviewUri(
@@ -336,6 +349,8 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     data-willow-tree="${willowTreeUri}"
     data-tent-small="${tentSmallUri}"
     data-tent-large="${tentLargeUri}"
+    data-shop="${shopUri}"
+    data-stable="${stableUri}"
     data-house-1="${houseUris[0]}"
     data-house-2="${houseUris[1]}"
     data-house-3="${houseUris[2]}"
@@ -436,6 +451,13 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas id="companion-5" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-6" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-7" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-8" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-9" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-10" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-11" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-12" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-13" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-14" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
@@ -458,8 +480,8 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <div class="panel-host ui-panel-host">
             <section id="panel-feed" class="panel" data-screen="feed">
               <h2>Manage</h2>
-              <p id="feed-status" class="status"></p>
-              <button class="action-btn" type="button" data-action="feed">Feed (+40 m)</button>
+              <p class="status squad-hint">Drag unlocked companions to change walking order. Top is toward the right of the road.</p>
+              <div id="squad-list" class="squad-list" role="list"></div>
             </section>
 
             <section id="panel-shop" class="panel" data-screen="shop">
@@ -510,7 +532,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas class="nav-btn-bg" aria-hidden="true"></canvas>
           <span class="nav-btn-label">Home</span>
         </button>
-        <button class="nav-btn nav-btn-disabled" type="button" data-screen="feed" disabled aria-disabled="true" title="Coming soon">
+        <button class="nav-btn" type="button" data-screen="feed">
           <canvas class="nav-btn-bg" aria-hidden="true"></canvas>
           <span class="nav-btn-label">Manage</span>
         </button>

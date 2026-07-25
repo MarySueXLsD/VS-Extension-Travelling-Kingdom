@@ -336,6 +336,109 @@ input {
   font-weight: 600;
 }
 
+.squad-hint {
+  margin: 0 0 4px;
+  font-size: 0.85em;
+  opacity: 0.9;
+  text-align: left;
+  width: 100%;
+}
+
+.squad-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  padding-right: 2px;
+  text-align: left;
+}
+
+.squad-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(232, 200, 106, 0.35);
+  border-radius: 4px;
+  background: rgba(58, 28, 18, 0.45);
+  color: var(--royal-cream, #f3e6c4);
+  padding: 8px;
+  cursor: grab;
+  font: inherit;
+}
+
+.squad-row-locked {
+  cursor: default;
+  border-style: dashed;
+  position: relative;
+  background: rgba(18, 10, 8, 0.82);
+}
+
+.squad-row-locked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 3;
+}
+
+.squad-row-dragging {
+  opacity: 0.55;
+}
+
+.squad-row-drop {
+  outline: 2px solid var(--royal-gold, #e8c86a);
+}
+
+.squad-portrait {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+}
+
+.squad-row-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.squad-row-title {
+  font-weight: 600;
+  color: var(--royal-gold, #e8c86a);
+}
+
+.squad-row-meta {
+  font-size: 0.8em;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.squad-row-desc {
+  font-size: 0.85em;
+  margin-top: 4px;
+  line-height: 1.25;
+  opacity: 0.95;
+}
+
+.app.minimal-ui .squad-row {
+  background: var(--vscode-button-secondaryBackground, rgba(127, 127, 127, 0.15));
+  border-color: var(--vscode-widget-border, #555);
+  color: var(--vscode-foreground);
+}
+
+.app.minimal-ui .squad-row-title {
+  color: var(--vscode-foreground);
+}
+
 .intro-frame {
   --royal-gold: #e8c86a;
   --royal-gold-dim: #c9a44a;
@@ -647,7 +750,7 @@ input {
   bottom: 0;
   width: max-content;
   margin-inline: 0;
-  z-index: 4;
+  z-index: 6;
 }
 
 .camp-npc,
@@ -662,6 +765,10 @@ input {
   image-rendering: crisp-edges;
 }
 
+.camp-actor {
+  z-index: 3;
+}
+
 .camp-npc {
   width: 96px;
   height: 96px;
@@ -669,20 +776,24 @@ input {
 }
 
 .companion-slot {
-  z-index: 3;
+  z-index: 5;
 }
 
 .companion-slot-far {
-  z-index: 2;
+  z-index: 5;
 }
 
 .companion-slot-right {
   z-index: 5;
 }
 
+.recruit-focus {
+  z-index: 7 !important;
+}
+
 .depart-btn {
   position: absolute;
-  z-index: 6;
+  z-index: 9;
   border: 1px solid var(--vscode-button-border, transparent);
   cursor: pointer;
   font: inherit;
@@ -725,7 +836,7 @@ input {
   width: 100%;
   pointer-events: none;
   /* Above character — grass/bushes overlap feet like before. */
-  z-index: 5;
+  z-index: 8;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

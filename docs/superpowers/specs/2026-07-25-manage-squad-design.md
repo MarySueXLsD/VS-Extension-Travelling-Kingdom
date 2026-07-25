@@ -24,6 +24,17 @@ Enable the **Manage** bottom-nav button and turn its panel into a scrollable squ
 | Locked rows | Guard + Hero |
 | Drag effect | Immediately updates Home walking order |
 | Feed button | Removed from Manage (option A) |
+| Recruit join | **No cutscene** — Continue resumes travel; squad eases open a slot; new recruit eases in |
+
+## Recruit join (no cutscene)
+
+On Continue at a landmark:
+
+1. Do **not** run approach / face / hold ceremony (no hero turn, no NPC turn, no speak-ease stop).
+2. Advance party immediately (same `partySize` / `leftTrailOrder` updates as today).
+3. Resume walking + ground scroll right away.
+4. Ease camera / trail to make space; ease the new recruit from their landmark screen position into their formation slot (guard → right; others → left index 0 / closest).
+5. Landmark decor still lingers and scrolls away.
 
 ## Navigation & panel
 

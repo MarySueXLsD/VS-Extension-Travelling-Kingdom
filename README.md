@@ -1,8 +1,10 @@
 # Travelling Kingdom
 
+![Travelling Kingdom 1.0.0](media/logo-1.0.0.png)
+
 A sidebar travel companion for **VS Code** and **Cursor**. Walk the road, visit destinations, recruit companions, and keep your character company while you work. Progress is saved in extension `globalState`.
 
-**[Source on GitHub →](https://github.com/MarySueXLsD/vs_extension_travelling_kingdom)** · Latest package: **0.0.53**
+Latest package: **1.0.0**
 
 ## About
 
@@ -40,14 +42,14 @@ You are never alone in the Explorer panel. Your hero walks a scrolling pixel-art
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <strong>In the Explorer</strong> — Lives in the VS Code / Cursor sidebar next to your files.
+      <strong>Full party on the trail</strong> — Sister, traveler, queen, and guard stop by a scout tent in the pines.
       <br><br>
-      <img src="assets/sidebar-explorer.png" width="100%" alt="Extension in Explorer sidebar">
+      <img src="assets/sidebar-explorer.png" width="100%" alt="Party of four at a tent camp">
     </td>
     <td width="50%" valign="top">
-      <strong>Settings</strong> — Clouds, distance units, minimalistic UI / background, and reset.
+      <strong>Manage squad</strong> — Browse companions with name, age, and a short bio; drag unlocked members to reorder who walks closest.
       <br><br>
-      <img src="assets/settings.png" width="100%" alt="Settings panel">
+      <img src="assets/settings.png" width="100%" alt="Manage panel squad list">
     </td>
   </tr>
 </table>

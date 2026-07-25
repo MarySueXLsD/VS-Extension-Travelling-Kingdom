@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.53.**
+Packaged `.vsix` files live in the project root. **Latest: 1.0.0.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -59,7 +59,12 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.50 | `travelling-kingdom-0.0.50.vsix` | 1.11 MB | 66 | All legs 50m; Scout Camp tents + right-side halberd; tree_apple rename |
 | 0.0.51 | `travelling-kingdom-0.0.51.vsix` | 1.11 MB | 66 | Wayside Stone traveler recruit |
 | 0.0.52 | `travelling-kingdom-0.0.52.vsix` | 1.12 MB | 66 | Market + Cloister villages; bishop/nun recruits |
-| 0.0.53 | `travelling-kingdom-0.0.53.vsix` | 1.12 MB | 66 | Current: tent/stall scales; newest-left formation; Continue idle |
+| 1.0.0 | `travelling-kingdom-1.0.0.vsix` | 1.13 MB | 66 | Current: first full release; shuffled 14 recruits; distance curve |
+| 0.0.57 | `travelling-kingdom-0.0.57.vsix` | 1.13 MB | 66 | Manage squad roster; simple recruit join |
+| 0.0.56 | `travelling-kingdom-0.0.56.vsix` | 1.12 MB | 66 | no post-join camera/party snap from host state |
+| 0.0.55 | `travelling-kingdom-0.0.55.vsix` | 1.12 MB | 66 | no join teleport; trail may go off-screen left |
+| 0.0.54 | `travelling-kingdom-0.0.54.vsix` | 1.12 MB | 66 | recruit cutscene polish; framing; z-order |
+| 0.0.53 | `travelling-kingdom-0.0.53.vsix` | 1.12 MB | 66 | tent/stall scales; newest-left formation; Continue idle |
 
 ---
 
@@ -425,6 +430,40 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 - Non-guard recruits stand newest-closest behind the hero; guard stays on the right; camera/gap padded so the line fits.
 - Recruit speak/meet stops closer to the NPC.
 - While Continue is showing, pet + squad use standing idle frames.
+
+## 0.0.54 — Recruit cutscene and framing polish
+
+- Landmark idle NPC stays visible while Continue / party idle is up (no hide during trail layout).
+- Non-guard meet cutscene eases closer, turns faces, holds, then resumes with camera ease (no teleport snap).
+- Guard join: hero stays facing right; guard flips and joins immediately (no face-wait holds).
+- Small tent draw scale **2×**; squad above crowd NPCs; active recruit above squad; grass on top.
+- Narrow sidebar camera clamps so the hero stays in the left–center band.
+
+## 0.0.55 — Formation ease, no left stack
+
+- After Continue, recruits **ease** into trail slots from their landmark position (no teleport snap).
+- Left companions may leave the screen; removed the `-20px` floor that stacked everyone on top of each other.
+- Camera ease and formation ease run together so the trail spreads cleanly.
+
+## 0.0.56 — Guard join snap fix
+
+- Host depart/state replies no longer abort formation ease or hard-snap the hero back to the lead X mid-walk.
+- Camera/party settle only via ease while a join is in motion (fixes the post-guard “everyone jumps” beat).
+
+## 0.0.57 — Manage squad + simple join
+
+- Manage nav enabled: scrollable squad list with portraits, name, age, description.
+- List order Guard → Hero → left trail (right→left on the road); Guard and Hero locked; trail drag-reorders walking order (persisted `leftTrailOrder`).
+- Continue no longer plays a face cutscene — travel resumes and the new recruit eases into formation.
+
+## 1.0.0 — First full release
+
+- **Whore Town → River Town**.
+- All **14 recruit stops** shuffled per run (`recruitLandmarkOrder`), including 6 male-sheet columns and female column 12; party up to **15**.
+- Destination meters: **100 / 300 / 500 / 1000 / 1500**, then **1500** for later legs.
+- Light shop/stable/tuft decor on new wayside stops.
+- Manage locked hero/guard rows use a darker overlay.
+- Extension **logo** / Marketplace icon: queen + companion forest still (`media/icon.png`, `media/logo-1.0.0.png`).
 
 ---
 

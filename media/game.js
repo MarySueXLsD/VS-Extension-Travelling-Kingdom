@@ -11,7 +11,7 @@
   const xpBarEl = document.getElementById('xp-bar');
   const xpLabelEl = document.getElementById('xp-label');
   const destinationLabelEl = document.getElementById('destination-label');
-  const feedStatusEl = document.getElementById('feed-status');
+  const squadListEl = document.getElementById('squad-list');
   const shopStatusEl = document.getElementById('shop-status');
   const petEl = document.getElementById('pet');
   const petSpriteEl = document.getElementById('pet-sprite');
@@ -22,6 +22,13 @@
   const companion5El = document.getElementById('companion-5');
   const companion6El = document.getElementById('companion-6');
   const companion7El = document.getElementById('companion-7');
+  const companion8El = document.getElementById('companion-8');
+  const companion9El = document.getElementById('companion-9');
+  const companion10El = document.getElementById('companion-10');
+  const companion11El = document.getElementById('companion-11');
+  const companion12El = document.getElementById('companion-12');
+  const companion13El = document.getElementById('companion-13');
+  const companion14El = document.getElementById('companion-14');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -100,7 +107,7 @@
   const GROVE_NPC_OX = 0.85;
   const GROVE_NPC_COL = 1; // female sheet column 2 (1-based)
   const GROVE_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
-  /** Whore Town (level 3) landmark — houses and townsfolk along the trail. */
+  /** River Town landmark — houses and townsfolk along the trail. */
   const TOWN_DEST_LEVEL = 3;
   const TOWN_NPC_COL = 3; // female sheet column 4 (1-based)
   const TOWN_NPC_OX = 0.85;
@@ -108,7 +115,7 @@
   /** Scout Camp (level 4) — standalone tents + halberd guard. */
   const TENT_DEST_LEVEL = 4;
   const TENT_LARGE_OX = 0.4;
-  const TENT_SMALL_OX = -2.8;
+  const TENT_SMALL_OX = -3.6;
   const TENT_NPC_OX = 1.55;
   const TENT_NPC_COL = 5; // male sheet column 6 (1-based)
   const TENT_NPC_ROWS = [1, 2, 3, 4, 5];
@@ -205,6 +212,12 @@
   /** Max camera ease (px/s); keep well below floor scroll so it reads as pan, not slide. */
   const CAMERA_EASE_MAX_SPEED = 28;
   const RECRUIT_FACE_MS = 300;
+  /** Brief hold after both faces turn before resume. */
+  const RECRUIT_HOLD_MS = 220;
+  /** Speak-approach ease toward the NPC (px/s). */
+  const RECRUIT_SPEAK_EASE_MAX = 96;
+  /** How fast companions slide into formation after a recruit joins (px/s). */
+  const COMPANION_FORM_EASE_MAX = 160;
   // characters1.png — 10×15 @ 64px (0-based rows/cols).
   const CHARS1_COLS = 10;
   const CHARS1_ROWS = 15;
@@ -334,6 +347,162 @@
       col: NUN_NPC_COL,
       side: 'left',
     },
+    male0: {
+      id: 'watch',
+      kind: 'male0',
+      el: companion8El,
+      sheet: 'male',
+      col: 0,
+      side: 'left',
+    },
+    male1: {
+      id: 'porter',
+      kind: 'male1',
+      el: companion9El,
+      sheet: 'male',
+      col: 1,
+      side: 'left',
+    },
+    male2: {
+      id: 'miller',
+      kind: 'male2',
+      el: companion10El,
+      sheet: 'male',
+      col: 2,
+      side: 'left',
+    },
+    male6: {
+      id: 'hedge',
+      kind: 'male6',
+      el: companion11El,
+      sheet: 'male',
+      col: 6,
+      side: 'left',
+    },
+    male8: {
+      id: 'anvil',
+      kind: 'male8',
+      el: companion12El,
+      sheet: 'male',
+      col: 8,
+      side: 'left',
+    },
+    male10: {
+      id: 'brook',
+      kind: 'male10',
+      el: companion13El,
+      sheet: 'male',
+      col: 10,
+      side: 'left',
+    },
+    female11: {
+      id: 'lantern',
+      kind: 'female11',
+      el: companion14El,
+      sheet: 'female',
+      col: 11,
+      side: 'left',
+    },
+  };
+
+  /** Light decor stops for the seven extra recruit kinds. */
+  const WAYSIDE_STOPS = {
+    male0: { el: companion8El, sheet: 'male', col: 0, ox: 0.55, decor: 'shop' },
+    male1: { el: companion9El, sheet: 'male', col: 1, ox: 0.55, decor: 'tuft' },
+    male2: { el: companion10El, sheet: 'male', col: 2, ox: 0.55, decor: 'stable' },
+    male6: { el: companion11El, sheet: 'male', col: 6, ox: 0.55, decor: 'tuft' },
+    male8: { el: companion12El, sheet: 'male', col: 8, ox: 0.55, decor: 'shop' },
+    male10: { el: companion13El, sheet: 'male', col: 10, ox: 0.55, decor: 'tuft' },
+    female11: { el: companion14El, sheet: 'female', col: 11, ox: 0.55, decor: 'stable' },
+  };
+  const WAYSIDE_NPC_ROWS = [1, 2, 3, 4, 5];
+  const WAYSIDE_BUILDING_SCALE = 1.15;
+  const WAYSIDE_TUFTS = [
+    { row: 4, col: 0, w: 1, h: 1, ox: -0.9 },
+    { row: 4, col: 1, w: 1, h: 1, ox: 0.05 },
+    { row: 5, col: 0, w: 1, h: 1, ox: 1.0 },
+  ];
+
+  /** Manage roster flavor (static). Hero name comes from state. */
+  const SQUAD_FLAVOR = {
+    'female-0': {
+      age: 24,
+      description: 'Leads the travelling court with a steady step and a sharp eye.',
+    },
+    'male-7': {
+      age: 31,
+      description: 'A crowned wanderer who prefers the road to the throne room.',
+    },
+    tent: {
+      name: 'Halberd Guard',
+      age: 28,
+      description: 'Keeps the right flank clear and answers trouble with steel.',
+    },
+    camp: {
+      name: 'Hooded Traveler',
+      age: 22,
+      description: 'Quiet camp-fire company who knows every shortcut on the map.',
+    },
+    grove: {
+      name: 'Grove Walker',
+      age: 19,
+      description: 'Apple-grove guide who hums while she keeps pace behind you.',
+    },
+    town: {
+      name: 'Town Companion',
+      age: 26,
+      description: 'River Town gossip and grit, loyal once she picks a side.',
+    },
+    stone: {
+      name: 'Wayside Traveler',
+      age: 33,
+      description: 'Joined at the wayside stone. Steady walker who prefers the back of the line.',
+    },
+    market: {
+      name: 'Market Bishop',
+      age: 47,
+      description: 'Blesses the stalls by day and the trail by dusk.',
+    },
+    cloister: {
+      name: 'Cloister Sister',
+      age: 29,
+      description: 'A quiet nun from the cloister village. Calm, loyal, and hard to shake.',
+    },
+    male0: {
+      name: 'Roadside Watch',
+      age: 34,
+      description: 'Keeps one eye on the road and one on whoever joins the trail.',
+    },
+    male1: {
+      name: 'Porter Bend',
+      age: 27,
+      description: 'Hauls more than his share and never complains twice.',
+    },
+    male2: {
+      name: 'Mill Creek',
+      age: 30,
+      description: 'Strong arms from the mill; steady feet on the march.',
+    },
+    male6: {
+      name: 'Hedge Trail',
+      age: 25,
+      description: 'Reads the hedgerows like a map and slips through quiet gaps.',
+    },
+    male8: {
+      name: 'Anvil Rest',
+      age: 41,
+      description: 'Sparks still cling to his sleeves; he mends kit by firelight.',
+    },
+    male10: {
+      name: 'Brook Crossing',
+      age: 23,
+      description: 'Knows every shallow ford and when the water will rise.',
+    },
+    female11: {
+      name: 'Lantern Meadow',
+      age: 28,
+      description: 'Carries a warm light for the darkest stretch of road.',
+    },
   };
 
   // Layer 1 = nearest (ground-like), layer 6 = farthest (static sky)
@@ -409,6 +578,8 @@
   let townFemaleImage = null;
   let tentSmallImg = null;
   let tentLargeImg = null;
+  let shopImg = null;
+  let stableImg = null;
   /** Shared village art: house-*, stall-*, tavern-*. */
   let villageArtImgs = {};
   let campNpcFrame = 0;
@@ -428,6 +599,9 @@
   let petLeadLeft = PET_BASE_LEFT;
   let petLeadLeftTarget = PET_BASE_LEFT;
   let cameraAnimId = null;
+  /** True while companions ease from landmark/old gaps into trail slots (no snap). */
+  let companionFormationEasing = false;
+  let companionFormationAnimId = null;
   let parallaxLayers = [];
   let cloudImages = [];
   let clouds = [];
@@ -507,19 +681,61 @@
     return (lvl - 2) * 500;
   }
 
+  const RECRUIT_KIND_COUNT = 14;
+  const MAX_PARTY_SIZE = 15;
   const EARLY_LANDMARK_KINDS = ['camp', 'grove', 'town'];
-  const EARLY_LANDMARK_NAMES = {
+  const RECRUIT_LANDMARK_KINDS = [
+    'camp',
+    'grove',
+    'town',
+    'tent',
+    'stone',
+    'market',
+    'cloister',
+    'male0',
+    'male1',
+    'male2',
+    'male6',
+    'male8',
+    'male10',
+    'female11',
+  ];
+  const LEFT_TRAIL_KINDS = RECRUIT_LANDMARK_KINDS.filter((k) => k !== 'tent');
+  const RECRUIT_LANDMARK_NAMES = {
     camp: 'Soldier Camp',
     grove: 'Apple Grove',
-    town: 'Whore Town',
+    town: 'River Town',
     tent: 'Scout Camp',
     stone: 'Wayside Stone',
     market: 'Market Village',
     cloister: 'Cloister Village',
+    male0: 'Roadside Watch',
+    male1: 'Porter Bend',
+    male2: 'Mill Creek',
+    male6: 'Hedge Trail',
+    male8: 'Anvil Rest',
+    male10: 'Brook Crossing',
+    female11: 'Lantern Meadow',
+  };
+  const EARLY_LANDMARK_NAMES = {
+    camp: 'Soldier Camp',
+    grove: 'Apple Grove',
+    town: 'River Town',
   };
 
   function shuffleEarlyLandmarks() {
     const arr = EARLY_LANDMARK_KINDS.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function shuffleRecruitLandmarks() {
+    const arr = RECRUIT_LANDMARK_KINDS.slice();
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const tmp = arr[i];
@@ -541,29 +757,65 @@
     return cleaned;
   }
 
+  function isValidRecruitLandmarkOrder(raw) {
+    if (!Array.isArray(raw) || raw.length !== RECRUIT_KIND_COUNT) {
+      return false;
+    }
+    const allowed = new Set(RECRUIT_LANDMARK_KINDS);
+    const cleaned = raw.filter((k) => allowed.has(String(k)));
+    return cleaned.length === RECRUIT_KIND_COUNT && new Set(cleaned).size === RECRUIT_KIND_COUNT;
+  }
+
+  function normalizeRecruitLandmarkOrder(raw, earlyFallback) {
+    if (isValidRecruitLandmarkOrder(raw)) {
+      return raw.slice();
+    }
+    const allowed = new Set(RECRUIT_LANDMARK_KINDS);
+    const cleaned = [];
+    if (Array.isArray(raw)) {
+      raw.forEach((item) => {
+        const key = String(item);
+        if (!allowed.has(key) || cleaned.includes(key)) {
+          return;
+        }
+        cleaned.push(key);
+      });
+    }
+    const early = earlyFallback ? normalizeEarlyLandmarkOrder(earlyFallback) : [];
+    early.forEach((kind) => {
+      if (!cleaned.includes(kind)) {
+        cleaned.push(kind);
+      }
+    });
+    const rest = RECRUIT_LANDMARK_KINDS.filter((k) => !cleaned.includes(k));
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = rest[i];
+      rest[i] = rest[j];
+      rest[j] = tmp;
+    }
+    return cleaned.concat(rest).slice(0, RECRUIT_KIND_COUNT);
+  }
+
   function earlyLandmarkOrderFromState(state) {
     return normalizeEarlyLandmarkOrder(state && state.earlyLandmarkOrder);
   }
 
+  function recruitLandmarkOrderFromState(state) {
+    return normalizeRecruitLandmarkOrder(
+      state && state.recruitLandmarkOrder,
+      state && state.earlyLandmarkOrder
+    );
+  }
+
   function landmarkKindAtLevel(state, level) {
     const lvl = Math.floor(Number(level) || 1);
-    if (lvl === 4) {
-      return 'tent';
-    }
-    if (lvl === 5) {
-      return 'stone';
-    }
-    if (lvl === 6) {
-      return 'market';
-    }
-    if (lvl === 7) {
-      return 'cloister';
-    }
     const idx = lvl - 1;
-    if (idx < 0 || idx > 2) {
+    if (idx < 0 || idx >= RECRUIT_KIND_COUNT) {
       return null;
     }
-    return earlyLandmarkOrderFromState(state)[idx] || null;
+    const order = recruitLandmarkOrderFromState(state);
+    return order[idx] || null;
   }
 
   function applyTravelLocal(state, gain) {
@@ -597,10 +849,10 @@
 
   function destinationNameForLevel(level) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    if (latestState && lvl >= 1 && lvl <= 7) {
+    if (latestState && lvl >= 1 && lvl <= RECRUIT_KIND_COUNT) {
       const kind = landmarkKindAtLevel(latestState, lvl);
-      if (kind && EARLY_LANDMARK_NAMES[kind]) {
-        return EARLY_LANDMARK_NAMES[kind];
+      if (kind && RECRUIT_LANDMARK_NAMES[kind]) {
+        return RECRUIT_LANDMARK_NAMES[kind];
       }
     }
     if (!destinations.length) {
@@ -712,13 +964,22 @@
         departing || latestState.level > server.level
           ? latestState.awaitingDeparture
           : Boolean(latestState.awaitingDeparture || server.awaitingDeparture);
+      const partySize = Math.max(server.partySize || 1, latestState.partySize || 1);
+      const earlyLandmarkOrder = earlyLandmarkOrderFromState(latestState);
+      const recruitLandmarkOrder = recruitLandmarkOrderFromState(latestState);
       return {
         ...server,
         level: latestState.level,
         meters: latestState.meters,
         awaitingDeparture: keepAwaiting,
-        partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
-        earlyLandmarkOrder: earlyLandmarkOrderFromState(latestState),
+        partySize,
+        earlyLandmarkOrder,
+        recruitLandmarkOrder,
+        leftTrailOrder: normalizeLeftTrailOrder(
+          latestState.leftTrailOrder || server.leftTrailOrder,
+          partySize,
+          recruitLandmarkOrder
+        ),
       };
     }
     // Host caught up or ahead: drop matching pending so we don't double-count.
@@ -735,42 +996,67 @@
     ) {
       // Same score, local already at camp — keep arrival until host flush lands.
       // Skip while an optimistic depart is in flight.
+      const partySize = Math.max(server.partySize || 1, latestState.partySize || 1);
+      const earlyLandmarkOrder = earlyLandmarkOrderFromState(latestState);
+      const recruitLandmarkOrder = recruitLandmarkOrderFromState(latestState);
       return {
         ...server,
         level: latestState.level,
         meters: latestState.meters,
         awaitingDeparture: true,
-        partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
-        earlyLandmarkOrder: earlyLandmarkOrderFromState(latestState),
+        partySize,
+        earlyLandmarkOrder,
+        recruitLandmarkOrder,
+        leftTrailOrder: normalizeLeftTrailOrder(
+          latestState.leftTrailOrder || server.leftTrailOrder,
+          partySize,
+          recruitLandmarkOrder
+        ),
       };
     }
+    const partySize = Math.max(server.partySize || 1, latestState.partySize || 1);
+    const earlyLandmarkOrder = earlyLandmarkOrderFromState(
+      Array.isArray(server.earlyLandmarkOrder) && server.earlyLandmarkOrder.length === 3
+        ? server
+        : latestState
+    );
+    const recruitLandmarkOrder = normalizeRecruitLandmarkOrder(
+      Array.isArray(server.recruitLandmarkOrder) &&
+        server.recruitLandmarkOrder.length === RECRUIT_KIND_COUNT
+        ? server.recruitLandmarkOrder
+        : latestState.recruitLandmarkOrder,
+      earlyLandmarkOrder
+    );
     return {
       ...server,
-      partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
-      earlyLandmarkOrder: earlyLandmarkOrderFromState(
-        Array.isArray(server.earlyLandmarkOrder) && server.earlyLandmarkOrder.length === 3
-          ? server
-          : latestState
+      partySize,
+      earlyLandmarkOrder,
+      recruitLandmarkOrder,
+      leftTrailOrder: normalizeLeftTrailOrder(
+        Array.isArray(server.leftTrailOrder) && server.leftTrailOrder.length
+          ? server.leftTrailOrder
+          : latestState.leftTrailOrder,
+        partySize,
+        recruitLandmarkOrder
       ),
     };
   }
 
   function applyDepartLocal(state) {
     let partySize = Math.max(1, state.partySize || 1);
-    if (state.level === 1) {
-      partySize = Math.max(partySize, 2);
-    } else if (state.level === 2) {
-      partySize = Math.max(partySize, 3);
-    } else if (state.level === 3) {
-      partySize = Math.max(partySize, 4);
-    } else if (state.level === 4) {
-      partySize = Math.max(partySize, 5);
-    } else if (state.level === 5) {
-      partySize = Math.max(partySize, 6);
-    } else if (state.level === 6) {
-      partySize = Math.max(partySize, 7);
-    } else if (state.level === 7) {
-      partySize = Math.max(partySize, 8);
+    const level = state.level;
+    const recruitLandmarkOrder = recruitLandmarkOrderFromState(state);
+    if (level >= 1 && level <= RECRUIT_KIND_COUNT) {
+      partySize = Math.max(partySize, Math.min(MAX_PARTY_SIZE, level + 1));
+    }
+    const departedKind = landmarkKindAtLevel(state, level);
+    let leftTrailOrder = normalizeLeftTrailOrder(
+      state.leftTrailOrder,
+      partySize,
+      recruitLandmarkOrder
+    );
+    if (departedKind && departedKind !== 'tent') {
+      leftTrailOrder = [departedKind, ...leftTrailOrder.filter((k) => k !== departedKind)];
     }
     return {
       ...state,
@@ -778,6 +1064,8 @@
       meters: 0,
       awaitingDeparture: false,
       partySize,
+      recruitLandmarkOrder,
+      leftTrailOrder,
     };
   }
 
@@ -787,41 +1075,57 @@
   }
 
   function companionCountFromState(state) {
-    return Math.max(1, Math.min(8, Math.floor((state && state.partySize) || 1)));
+    return Math.max(1, Math.min(MAX_PARTY_SIZE, Math.floor((state && state.partySize) || 1)));
   }
 
-  /** Guard on the right; left trail newest-closest (reversed chronology). */
+  /** Guard on the right; left trail from persisted order (else newest-closest). */
   function recruitedLandmarkKinds(state) {
-    const order = earlyLandmarkOrderFromState(state);
     const party = companionCountFromState(state);
-    const hasTent = party >= 5;
-    const hasStone = party >= 6;
-    const hasBishop = party >= 7;
-    const hasNun = party >= 8;
-    const reserved =
-      (hasTent ? 1 : 0) + (hasStone ? 1 : 0) + (hasBishop ? 1 : 0) + (hasNun ? 1 : 0);
-    const earlyCount = Math.min(3, Math.max(0, party - 1 - reserved));
-    // Chronological left recruits (oldest → newest).
-    const leftChrono = order.slice(0, earlyCount);
-    if (hasStone) {
-      leftChrono.push('stone');
-    }
-    if (hasBishop) {
-      leftChrono.push('market');
-    }
-    if (hasNun) {
-      leftChrono.push('cloister');
-    }
-    // Newest closest to hero on the left trail.
-    const kinds = leftChrono.slice().reverse();
-    if (hasTent) {
+    const leftOrder = normalizeLeftTrailOrder(
+      state && state.leftTrailOrder,
+      party,
+      recruitLandmarkOrderFromState(state)
+    );
+    const kinds = leftOrder.slice();
+    if (hasRecruitedKind(state, 'tent')) {
       kinds.unshift('tent');
     }
     return kinds;
   }
 
+  function defaultLeftTrailOrderFromParty(partySize, recruitOrder) {
+    const party = Math.max(1, Math.min(MAX_PARTY_SIZE, Math.floor(partySize || 1)));
+    const order = normalizeRecruitLandmarkOrder(recruitOrder);
+    const recruited = order.slice(0, Math.max(0, party - 1));
+    return recruited.filter((k) => k !== 'tent').slice().reverse();
+  }
+
+  function normalizeLeftTrailOrder(raw, partySize, recruitOrder) {
+    const expected = defaultLeftTrailOrderFromParty(partySize, recruitOrder);
+    const expectedSet = new Set(expected);
+    const allowed = new Set(LEFT_TRAIL_KINDS);
+    const cleaned = [];
+    if (Array.isArray(raw)) {
+      raw.forEach((item) => {
+        const key = String(item);
+        if (!allowed.has(key) || !expectedSet.has(key) || cleaned.includes(key)) {
+          return;
+        }
+        cleaned.push(key);
+      });
+    }
+    expected.forEach((kind) => {
+      if (!cleaned.includes(kind)) {
+        cleaned.push(kind);
+      }
+    });
+    return cleaned;
+  }
+
   function hasRecruitedKind(state, kind) {
-    return recruitedLandmarkKinds(state).includes(kind);
+    const party = companionCountFromState(state);
+    const order = recruitLandmarkOrderFromState(state);
+    return order.slice(0, Math.max(0, party - 1)).includes(kind);
   }
 
   function activeCompanionSlots(state) {
@@ -841,14 +1145,14 @@
     const nextJoined = companionCountFromState(state) >= 2;
     companionJoined = nextJoined;
     setCameraTargetForParty(state && state.partySize ? state.partySize : 1);
+    // Host depart/travel replies must not abort join/camera motion or hard-snap the party.
+    if (companionFormationEasing || cameraAnimId !== null) {
+      return;
+    }
     if (companionJoined) {
       positionCompanionsBehindPet();
       drawActiveCompanionWalkFrames(walkFrame || 0);
-      // Only snap on large mismatch (reload); otherwise ease.
-      if (Math.abs(petLeadLeft - petLeadLeftTarget) > CAMERA_PAD_PER_MEMBER * 2.5) {
-        applyPetLeft(petLeadLeftTarget);
-        positionCompanionsBehindPet();
-      } else if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
+      if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
         startCameraEase();
       }
     } else {
@@ -866,7 +1170,11 @@
       .length;
     const n = Math.max(1, leftTrail + 1);
     void partySize;
-    petLeadLeftTarget = PET_BASE_LEFT + Math.max(0, n - 1) * CAMERA_PAD_PER_MEMBER;
+    const ideal = PET_BASE_LEFT + Math.max(0, n - 1) * CAMERA_PAD_PER_MEMBER;
+    const width = Math.max(1, Math.round(appEl.clientWidth || 0));
+    // Prefer keeping the hero visible on narrow panels; trail may clip off the left.
+    const maxLead = Math.max(PET_BASE_LEFT, Math.floor(width * 0.36));
+    petLeadLeftTarget = Math.min(ideal, maxLead);
   }
 
   function applyPetLeft(px) {
@@ -897,7 +1205,8 @@
         const diff = petLeadLeftTarget - petLeadLeft;
         if (Math.abs(diff) < 0.5) {
           applyPetLeft(petLeadLeftTarget);
-          if (hasActiveCompanionSlots()) {
+          // Formation ease owns companion X until it finishes; don't snap over it.
+          if (hasActiveCompanionSlots() && !companionFormationEasing) {
             positionCompanionsBehindPet();
           }
           cameraAnimId = null;
@@ -918,7 +1227,7 @@
           Math.sign(diff) * Math.min(Math.abs(diff), CAMERA_EASE_MAX_SPEED * dt);
         const step = Math.abs(eased) < Math.abs(capped) ? eased : capped;
         applyPetLeft(petLeadLeft + step);
-        if (hasActiveCompanionSlots()) {
+        if (hasActiveCompanionSlots() && !companionFormationEasing) {
           positionCompanionsBehindPet();
         }
       }
@@ -1070,15 +1379,7 @@
   }
 
   function shouldShowLandmark(state) {
-    return (
-      shouldShowCamp(state) ||
-      shouldShowGrove(state) ||
-      shouldShowTown(state) ||
-      shouldShowTent(state) ||
-      shouldShowStone(state) ||
-      shouldShowMarket(state) ||
-      shouldShowCloister(state)
-    );
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level));
   }
 
   function landmarkKindForState(state) {
@@ -1097,23 +1398,33 @@
     return Math.max(0, needed - progress);
   }
 
+  function waysideBandOffsets(kind) {
+    if (!WAYSIDE_STOPS[kind]) {
+      return null;
+    }
+    return { left: -2.5, right: 2.5 };
+  }
+
   function isCampOffscreen() {
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
-    const leftOffset =
-      landmarkKind === 'town'
+    const wayside = waysideBandOffsets(landmarkKind);
+    const leftOffset = wayside
+      ? wayside.left
+      : landmarkKind === 'town'
         ? -13.5
         : landmarkKind === 'grove'
           ? -8.0
           : landmarkKind === 'tent'
             ? -4.0
-          : landmarkKind === 'stone'
+            : landmarkKind === 'stone'
               ? -1.5
               : landmarkKind === 'market' || landmarkKind === 'cloister'
                 ? -21.0
                 : CAMP_PIECES[0].ox;
-    const rightOffset =
-      landmarkKind === 'town'
+    const rightOffset = wayside
+      ? wayside.right
+      : landmarkKind === 'town'
         ? 13.5
         : landmarkKind === 'grove'
           ? 8.0
@@ -1192,6 +1503,13 @@
 
   function campBand() {
     const u = campUnit();
+    const wayside = waysideBandOffsets(landmarkKind);
+    if (wayside) {
+      return {
+        left: campPotWorldX + wayside.left * u - 8,
+        right: campPotWorldX + wayside.right * u + 8,
+      };
+    }
     if (landmarkKind === 'grove') {
       return {
         left: campPotWorldX - 8.0 * u - 8,
@@ -1310,7 +1628,7 @@
       }
       ctx.drawImage(img, dx, height - drawH, drawW, drawH);
     };
-    drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE);
+    drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE * 2);
     drawTent(tentLargeImg, TENT_LARGE_OX, TENT_DISPLAY_SCALE);
   }
 
@@ -1374,6 +1692,53 @@
       return;
     }
     paintVillageLayout(ctx, height, CLOISTER_BUILDINGS);
+  }
+
+  function paintWaysideStop(ctx, height, kind) {
+    if (!campActive || landmarkKind !== kind || !WAYSIDE_STOPS[kind]) {
+      return;
+    }
+    const stop = WAYSIDE_STOPS[kind];
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    const buildingImg =
+      stop.decor === 'shop' ? shopImg : stop.decor === 'stable' ? stableImg : null;
+    if (buildingImg) {
+      const naturalW = buildingImg.naturalWidth || buildingImg.width;
+      const naturalH = buildingImg.naturalHeight || buildingImg.height;
+      const drawW = Math.round(naturalW * WAYSIDE_BUILDING_SCALE);
+      const drawH = Math.round(naturalH * WAYSIDE_BUILDING_SCALE);
+      const dx = Math.round(campPotWorldX - 0.35 * u - decorScroll - drawW / 2);
+      if (dx + drawW >= 0 && dx <= width) {
+        ctx.drawImage(buildingImg, dx, height - drawH, drawW, drawH);
+      }
+    }
+    if (!decorImg || !decorCell) {
+      return;
+    }
+    WAYSIDE_TUFTS.forEach((piece) => {
+      const sizeW = piece.w * u;
+      const sizeH = piece.h * u;
+      const dx = Math.round(campPotWorldX + piece.ox * u - decorScroll);
+      if (dx + sizeW < 0 || dx > width) {
+        return;
+      }
+      ctx.drawImage(
+        decorImg,
+        piece.col * decorCell,
+        piece.row * decorCell,
+        piece.w * decorCell,
+        piece.h * decorCell,
+        dx,
+        height - sizeH,
+        sizeW,
+        sizeH
+      );
+    });
+  }
+
+  function paintAllWaysideStops(ctx, height) {
+    Object.keys(WAYSIDE_STOPS).forEach((kind) => paintWaysideStop(ctx, height, kind));
   }
 
   function positionCampNpc() {
@@ -1553,6 +1918,38 @@
     companion7El.hidden = false;
     companion7El.style.left = `${screenX}px`;
     companion7El.style.bottom = '0';
+  }
+
+  function shouldShowWaysideNpc(kind) {
+    return Boolean(
+      campActive &&
+        WAYSIDE_STOPS[kind] &&
+        landmarkKind === kind &&
+        latestState &&
+        !hasRecruitedKind(latestState, kind)
+    );
+  }
+
+  function positionWaysideNpc(kind) {
+    const stop = WAYSIDE_STOPS[kind];
+    if (!stop || !stop.el) {
+      return;
+    }
+    if (!shouldShowWaysideNpc(kind)) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === stop.el)) {
+        stop.el.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + stop.ox * u - decorScroll);
+    stop.el.hidden = false;
+    stop.el.style.left = `${screenX}px`;
+    stop.el.style.bottom = '0';
+  }
+
+  function positionAllWaysideNpcs() {
+    Object.keys(WAYSIDE_STOPS).forEach((kind) => positionWaysideNpc(kind));
   }
 
   function positionCampExtra(extra, frameIndex) {
@@ -1976,6 +2373,44 @@
     }
   }
 
+  function drawWaysideNpcFrame(kind, frameIndex) {
+    const stop = WAYSIDE_STOPS[kind];
+    if (!stop || !stop.el || !shouldShowWaysideNpc(kind)) {
+      return;
+    }
+    const img =
+      stop.sheet === 'female'
+        ? groveFemaleImage || (findCharacter('female-0') || {}).sheetImage
+        : campNpcImage;
+    if (!img) {
+      return;
+    }
+    const cols = stop.sheet === 'female' ? 12 : 11;
+    const cellW = Math.floor(img.naturalWidth / cols);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = WAYSIDE_NPC_ROWS[frameIndex % WAYSIDE_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    const el = stop.el;
+    el.width = Math.round(size * dpr);
+    el.height = Math.round(size * dpr);
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    const ctx = el.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, stop.col * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, stop.col * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex, options) {
     const el = slot && slot.el;
     const image =
@@ -2033,6 +2468,68 @@
     );
   }
 
+  function isLandmarkIdleEl(el) {
+    if (!el || !latestState) {
+      return false;
+    }
+    const kind = Object.keys(COMPANION_BY_KIND).find((k) => COMPANION_BY_KIND[k].el === el);
+    if (!kind) {
+      return false;
+    }
+    if (recruitBusy && landmarkKind === kind) {
+      return true;
+    }
+    return Boolean(
+      campActive && landmarkKind === kind && !hasRecruitedKind(latestState, kind)
+    );
+  }
+
+  function syncRecruitFocusClass() {
+    Object.keys(COMPANION_BY_KIND).forEach((kind) => {
+      const el = COMPANION_BY_KIND[kind].el;
+      if (!el) {
+        return;
+      }
+      el.classList.toggle('recruit-focus', isLandmarkIdleEl(el));
+    });
+  }
+
+  function readElLeft(el) {
+    if (!el) {
+      return 0;
+    }
+    const parsed = parseFloat(el.style.left);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+    return el.offsetLeft || 0;
+  }
+
+  function companionSlotTargetLeft(slot, index, petLeft) {
+    if (slot.side === 'right') {
+      return petLeft + SPRITE_DISPLAY * 0.72 + index * COMPANION_FOLLOW_GAP;
+    }
+    // Allow off-screen left — never stack at a floor.
+    return petLeft - (index + 1) * COMPANION_FOLLOW_GAP;
+  }
+
+  function stopCompanionFormationEase() {
+    if (companionFormationAnimId !== null) {
+      cancelAnimationFrame(companionFormationAnimId);
+      companionFormationAnimId = null;
+    }
+    companionFormationEasing = false;
+  }
+
+  function hideInactiveCompanionEls(activeEls) {
+    Object.keys(COMPANION_BY_KIND).forEach((kind) => {
+      const el = COMPANION_BY_KIND[kind].el;
+      if (el && !activeEls.has(el) && !isLandmarkIdleEl(el)) {
+        el.hidden = true;
+      }
+    });
+  }
+
   function positionCompanionsBehindPet() {
     if (!petEl) {
       return;
@@ -2040,28 +2537,85 @@
     const petLeft = petEl.offsetLeft;
     const active = activeCompanionSlots(latestState);
     const activeEls = new Set(active.map((slot) => slot.el));
-    Object.keys(COMPANION_BY_KIND).forEach((kind) => {
-      const el = COMPANION_BY_KIND[kind].el;
-      if (el && !activeEls.has(el)) {
-        el.hidden = true;
-      }
-    });
+    hideInactiveCompanionEls(activeEls);
+    if (companionFormationEasing) {
+      syncRecruitFocusClass();
+      return;
+    }
     const rightSlots = active.filter((slot) => slot.side === 'right');
     const leftSlots = active.filter((slot) => slot.side !== 'right');
     rightSlots.forEach((slot, index) => {
       const el = slot.el;
-      const left = petLeft + SPRITE_DISPLAY * 0.72 + index * COMPANION_FOLLOW_GAP;
+      const left = companionSlotTargetLeft(slot, index, petLeft);
       el.hidden = false;
       el.style.left = `${Math.round(left)}px`;
       el.style.bottom = '0';
     });
     leftSlots.forEach((slot, index) => {
       const el = slot.el;
-      const left = Math.max(-20, petLeft - (index + 1) * COMPANION_FOLLOW_GAP);
+      const left = companionSlotTargetLeft(slot, index, petLeft);
       el.hidden = false;
-      el.style.left = `${left}px`;
+      el.style.left = `${Math.round(left)}px`;
       el.style.bottom = '0';
     });
+    syncRecruitFocusClass();
+  }
+
+  /** Ease every squad member from their current X into trail gaps (may go off-screen left). */
+  function startCompanionFormationEase() {
+    stopCompanionFormationEase();
+    if (!petEl || !hasActiveCompanionSlots()) {
+      return;
+    }
+    companionFormationEasing = true;
+    let lastTs = 0;
+    const tick = (timestamp) => {
+      if (!companionFormationEasing || !petEl) {
+        companionFormationAnimId = null;
+        return;
+      }
+      const dt = lastTs > 0 ? Math.min(0.05, (timestamp - lastTs) / 1000) : 0.016;
+      lastTs = timestamp;
+      const petLeft = petEl.offsetLeft;
+      const active = activeCompanionSlots(latestState);
+      const activeEls = new Set(active.map((slot) => slot.el));
+      hideInactiveCompanionEls(activeEls);
+      let allDone = true;
+      const place = (slots) => {
+        slots.forEach((slot, index) => {
+          const el = slot.el;
+          if (!el) {
+            return;
+          }
+          el.hidden = false;
+          el.style.bottom = '0';
+          const target = companionSlotTargetLeft(slot, index, petLeft);
+          const cur = readElLeft(el);
+          const diff = target - cur;
+          if (Math.abs(diff) > 0.75) {
+            allDone = false;
+            const step =
+              Math.sign(diff) * Math.min(Math.abs(diff), COMPANION_FORM_EASE_MAX * dt);
+            el.style.left = `${Math.round(cur + step)}px`;
+          } else {
+            el.style.left = `${Math.round(target)}px`;
+          }
+        });
+      };
+      place(active.filter((slot) => slot.side === 'right'));
+      place(active.filter((slot) => slot.side !== 'right'));
+      syncRecruitFocusClass();
+      const cameraDone = Math.abs(petLeadLeft - petLeadLeftTarget) < 0.5 && cameraAnimId === null;
+      if (allDone && cameraDone) {
+        companionFormationEasing = false;
+        companionFormationAnimId = null;
+        // Already on targets — settle without a visible teleport.
+        positionCompanionsBehindPet();
+        return;
+      }
+      companionFormationAnimId = requestAnimationFrame(tick);
+    };
+    companionFormationAnimId = requestAnimationFrame(tick);
   }
 
   function stopCampNpcAnim() {
@@ -2120,6 +2674,10 @@
       if (shouldShowNunNpc()) {
         drawNunNpcFrame(campNpcFrame);
         positionNunNpc();
+      }
+      if (WAYSIDE_STOPS[landmarkKind]) {
+        drawWaysideNpcFrame(landmarkKind, campNpcFrame);
+        positionWaysideNpc(landmarkKind);
       }
       if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
@@ -2248,13 +2806,28 @@
       })
     );
     villageArtImgs = loaded;
-    // Reuse house images already loaded for Whore Town when present.
+    // Reuse house images already loaded for River Town when present.
     if (townHouseImgs && townHouseImgs.length === TOWN_HOUSES.length) {
       TOWN_HOUSES.forEach((house, index) => {
         if (!villageArtImgs[house.id] && townHouseImgs[index]) {
           villageArtImgs[house.id] = townHouseImgs[index];
         }
       });
+    }
+    if (campActive) {
+      startCampNpcAnim();
+      paintDecor();
+    }
+  }
+
+  async function prepareWaysideArt() {
+    const shopSrc = appEl.getAttribute('data-shop') || appEl.dataset.shop;
+    const stableSrc = appEl.getAttribute('data-stable') || appEl.dataset.stable;
+    if (shopSrc) {
+      shopImg = makeBlackTransparent(await loadImage(shopSrc));
+    }
+    if (stableSrc) {
+      stableImg = makeBlackTransparent(await loadImage(stableSrc));
     }
     if (campActive) {
       startCampNpcAnim();
@@ -2284,6 +2857,7 @@
     if (recruitBusy) {
       return;
     }
+    stopCompanionFormationEase();
     campActive = false;
     landmarkKind = null;
     campWorldLocked = false;
@@ -2291,27 +2865,12 @@
     stopCampNpcAnim();
     hideAllCampExtras();
     hideAllTownExtras();
-    if (campNpcEl && !hasRecruitedKind(latestState, 'camp')) {
-      campNpcEl.hidden = true;
-    }
-    if (companion2El && !hasRecruitedKind(latestState, 'grove')) {
-      companion2El.hidden = true;
-    }
-    if (companion3El && !hasRecruitedKind(latestState, 'town')) {
-      companion3El.hidden = true;
-    }
-    if (companion4El && !hasRecruitedKind(latestState, 'tent')) {
-      companion4El.hidden = true;
-    }
-    if (companion5El && !hasRecruitedKind(latestState, 'stone')) {
-      companion5El.hidden = true;
-    }
-    if (companion6El && !hasRecruitedKind(latestState, 'market')) {
-      companion6El.hidden = true;
-    }
-    if (companion7El && !hasRecruitedKind(latestState, 'cloister')) {
-      companion7El.hidden = true;
-    }
+    Object.keys(COMPANION_BY_KIND).forEach((kind) => {
+      const el = COMPANION_BY_KIND[kind].el;
+      if (el && !hasRecruitedKind(latestState, kind)) {
+        el.hidden = true;
+      }
+    });
     if (departBtnEl) {
       departBtnEl.hidden = true;
     }
@@ -2358,8 +2917,10 @@
 
   function getRecruitScreenLeft() {
     const u = campUnit();
-    const npcOffset =
-      landmarkKind === 'grove'
+    const wayside = WAYSIDE_STOPS[landmarkKind];
+    const npcOffset = wayside
+      ? wayside.ox
+      : landmarkKind === 'grove'
         ? GROVE_NPC_OX
         : landmarkKind === 'town'
           ? TOWN_NPC_OX
@@ -2386,7 +2947,9 @@
   }
 
   function positionRecruitNpc() {
-    if (landmarkKind === 'grove') {
+    if (WAYSIDE_STOPS[landmarkKind]) {
+      positionWaysideNpc(landmarkKind);
+    } else if (landmarkKind === 'grove') {
       positionGroveNpc();
     } else if (landmarkKind === 'town') {
       positionTownNpc();
@@ -2401,10 +2964,29 @@
     } else {
       positionCampNpc();
     }
+    syncRecruitFocusClass();
+  }
+
+  function cancelCameraEase() {
+    if (cameraAnimId !== null) {
+      cancelAnimationFrame(cameraAnimId);
+      cameraAnimId = null;
+    }
+    startCameraEase._queue = [];
+  }
+
+  function recruitSpeakLeftTarget() {
+    const recruitX = getRecruitScreenLeft();
+    if (landmarkKind === 'tent') {
+      return Math.max(8, Math.min(petLeadLeft, recruitX - SPRITE_DISPLAY * 0.85));
+    }
+    return Math.max(8, recruitX - SPRITE_DISPLAY - RECRUIT_SPEAK_GAP);
   }
 
   function drawRecruitNpcFrame(frameIndex) {
-    if (landmarkKind === 'grove') {
+    if (WAYSIDE_STOPS[landmarkKind]) {
+      drawWaysideNpcFrame(landmarkKind, frameIndex);
+    } else if (landmarkKind === 'grove') {
       drawGroveNpcFrame(frameIndex);
     } else if (landmarkKind === 'town') {
       drawTownNpcFrame(frameIndex);
@@ -2423,120 +3005,19 @@
 
   function startRecruitCeremony(joinedState, options) {
     const joinPartySize = (options && options.joinPartySize) || 2;
-    const recruitSlotIndex = joinPartySize - 2;
-    recruitBusy = true;
-    recruitPhase = 'approach';
+    // No face/approach cutscene: keep walking, open a squad gap, ease recruit in.
     recruitJoinedState = joinedState;
-    companionJoined = false;
-    npcFaceRight = false;
-    petFaceRight = true;
     stopPartyIdleAnim();
     if (departBtnEl) {
       departBtnEl.hidden = true;
       departBtnEl.disabled = true;
     }
-    // Traveler stays world-locked at the pot; world scrolls until they meet.
     campWorldLocked = true;
     campActive = true;
-    startCampNpcAnim();
-
-    const characterId =
-      joinedState.characterId || (latestState && latestState.characterId);
-    const character = findCharacter(characterId);
-    let phaseUntil = 0;
-
-    const beginFaceCeremony = (timestamp) => {
-      stopGroundScroll();
-      stopWalkAnimation();
-      stopPartyIdleAnim();
-      travelEnabled = false;
-      recruitPhase = 'petFace';
-      petFaceRight = false;
-      // Pull the hero closer to the recruit for the speaking beat.
-      const recruitX = getRecruitScreenLeft();
-      const speakLeft =
-        landmarkKind === 'tent'
-          ? Math.max(8, Math.min(petLeadLeft, recruitX - SPRITE_DISPLAY * 0.85))
-          : Math.max(8, recruitX - SPRITE_DISPLAY - RECRUIT_SPEAK_GAP);
-      applyPetLeft(speakLeft);
-      positionCompanionsBehindPet();
-      if (character && character.sheetImage) {
-        drawIdleFrame(character, 0, false);
-      }
-      if (hasActiveCompanionSlots()) {
-        drawActiveCompanionIdleFrames(0);
-      }
-      positionRecruitNpc();
-      phaseUntil = timestamp + RECRUIT_FACE_MS;
-    };
-
-    // Already past the meet point (landmark under pet can put recruit nearly behind).
-    if (recruitAtFollowSlot(recruitSlotIndex)) {
-      beginFaceCeremony(performance.now());
-    } else {
-      enableTravelAccrual();
-      if (characterId) {
-        startWalkAnimation(characterId);
-      }
-      startGroundScroll();
-    }
-
-    const tick = (timestamp) => {
-      if (!recruitBusy) {
-        recruitAnimId = null;
-        return;
-      }
-
-      if (recruitPhase === 'approach') {
-        petFaceRight = true;
-        positionRecruitNpc();
-        if (recruitAtFollowSlot(recruitSlotIndex)) {
-          beginFaceCeremony(timestamp);
-        }
-      } else if (recruitPhase === 'petFace') {
-        positionRecruitNpc();
-        if (character && character.sheetImage) {
-          drawIdleFrame(character, campNpcFrame, false);
-        }
-        if (hasActiveCompanionSlots()) {
-          drawActiveCompanionIdleFrames(campNpcFrame);
-        }
-        if (timestamp >= phaseUntil) {
-          recruitPhase = 'npcFace';
-          npcFaceRight = true;
-          drawRecruitNpcFrame(campNpcFrame);
-          positionRecruitNpc();
-          phaseUntil = timestamp + RECRUIT_FACE_MS;
-        }
-      } else if (recruitPhase === 'npcFace') {
-        drawRecruitNpcFrame(campNpcFrame);
-        positionRecruitNpc();
-        if (character && character.sheetImage) {
-          drawIdleFrame(character, campNpcFrame, false);
-        }
-        if (hasActiveCompanionSlots()) {
-          drawActiveCompanionIdleFrames(campNpcFrame);
-        }
-        if (timestamp >= phaseUntil) {
-          recruitPhase = 'petResume';
-          petFaceRight = true;
-          if (character && character.sheetImage) {
-            drawIdleFrame(character, 0, true);
-          }
-          phaseUntil = timestamp + 80;
-        }
-      } else if (recruitPhase === 'petResume') {
-        if (timestamp >= phaseUntil) {
-          finishRecruitCeremony(joinPartySize);
-          return;
-        }
-      }
-
-      paintDecor();
-      recruitAnimId = requestAnimationFrame(tick);
-    };
-
-    recruitAnimId = requestAnimationFrame(tick);
+    petFaceRight = true;
+    npcFaceRight = landmarkKind === 'tent';
+    // Leave recruit at landmark screen X; finishRecruitCeremony eases into formation.
+    finishRecruitCeremony(joinPartySize);
   }
 
   function finishRecruitCeremony(joinPartySize) {
@@ -2549,17 +3030,33 @@
     petFaceRight = true;
     companionJoined = true;
     if (joined) {
+      const partySize = Math.max(joined.partySize || 1, joinPartySize || 2);
+      const recruitLandmarkOrder = recruitLandmarkOrderFromState(joined);
       latestState = {
         ...joined,
-        partySize: Math.max(joined.partySize || 1, joinPartySize || 2),
+        partySize,
         awaitingDeparture: false,
         screen: activeScreen || joined.screen || 'home',
+        recruitLandmarkOrder,
+        leftTrailOrder: normalizeLeftTrailOrder(
+          joined.leftTrailOrder,
+          partySize,
+          recruitLandmarkOrder
+        ),
       };
     } else if (latestState) {
+      const partySize = Math.max(latestState.partySize || 1, joinPartySize || 2);
+      const recruitLandmarkOrder = recruitLandmarkOrderFromState(latestState);
       latestState = {
         ...latestState,
-        partySize: Math.max(latestState.partySize || 1, joinPartySize || 2),
+        partySize,
         awaitingDeparture: false,
+        recruitLandmarkOrder,
+        leftTrailOrder: normalizeLeftTrailOrder(
+          latestState.leftTrailOrder,
+          partySize,
+          recruitLandmarkOrder
+        ),
       };
     }
     departing = false;
@@ -2568,20 +3065,27 @@
     landmarkLinger = true;
     campWorldLocked = true;
     campActive = true;
-    positionCompanionsBehindPet();
+
+    // Keep current pixel positions (recruit at landmark, trail where they stood)
+    // and ease into formation — never snap/teleport into overlapping slots.
+    companionFormationEasing = true;
+    activeCompanionSlots(latestState).forEach((slot) => {
+      if (slot.el) {
+        slot.el.hidden = false;
+        slot.el.style.bottom = '0';
+      }
+    });
     drawActiveCompanionWalkFrames(0);
+    syncRecruitFocusClass();
 
     const character = findCharacter(latestState && latestState.characterId);
     if (character && character.sheetImage) {
       drawWalkFrame(character, 0, true);
     }
 
-    // Join + resume travel immediately; ease camera framing in parallel while scrolling
-    // so the lead shift reads as a camera pan, not sliding on a frozen plate.
     setCameraTargetForParty(latestState.partySize || joinPartySize || 2);
     syncCampWorldPosition();
     paintDecor();
-    positionCompanionsBehindPet();
 
     if (latestState && latestState.characterId && (activeScreen || 'home') === 'home') {
       enableTravelAccrual();
@@ -2589,6 +3093,7 @@
       startGroundScroll();
     }
     startCameraEase();
+    startCompanionFormationEase();
   }
 
   function logicalIndexFromTrack(index) {
@@ -2756,6 +3261,7 @@
     positionStoneNpc();
     positionBishopNpc();
     positionNunNpc();
+    positionAllWaysideNpcs();
     positionDepartButton();
   }
 
@@ -2779,6 +3285,7 @@
       paintStoneWayside(ctx, height);
       paintMarketVillage(ctx, height);
       paintCloisterVillage(ctx, height);
+      paintAllWaysideStops(ctx, height);
     }
   }
 
@@ -3745,24 +4252,32 @@
     if (!appEl.classList.contains('selecting-character')) {
       startGroundScroll();
     }
+    const onGroundResize = () => {
+      syncCloudDensity();
+      paintParallax();
+      paintGround();
+      paintDecor();
+      // Re-clamp lead so the hero stays visible when the sidebar narrows.
+      if (latestState && !recruitBusy) {
+        setCameraTargetForParty(latestState.partySize || 1);
+        if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
+          startCameraEase();
+        } else {
+          applyPetLeft(petLeadLeftTarget);
+          if (hasActiveCompanionSlots()) {
+            positionCompanionsBehindPet();
+          }
+        }
+      }
+    };
     if (typeof ResizeObserver !== 'undefined') {
-      groundResizeObserver = new ResizeObserver(() => {
-        syncCloudDensity();
-        paintParallax();
-        paintGround();
-        paintDecor();
-      });
+      groundResizeObserver = new ResizeObserver(onGroundResize);
       groundResizeObserver.observe(appEl);
       if (gameWorldEl) {
         groundResizeObserver.observe(gameWorldEl);
       }
     } else {
-      window.addEventListener('resize', () => {
-        syncCloudDensity();
-        paintParallax();
-        paintGround();
-        paintDecor();
-      });
+      window.addEventListener('resize', onGroundResize);
     }
   }
 
@@ -3828,8 +4343,8 @@
   }
 
   function setScreen(screenId) {
-    // Manage / Shop are stubbed for now.
-    if (screenId === 'feed' || screenId === 'shop') {
+    // Shop stays stubbed.
+    if (screenId === 'shop') {
       screenId = 'home';
     }
     const selecting = screenId === 'character-select';
@@ -3859,6 +4374,9 @@
     navButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.screen === screenId);
     });
+    if (screenId === 'feed') {
+      renderSquadList();
+    }
 
     if (selecting) {
       return;
@@ -4134,10 +4652,250 @@
     petNameEl.textContent = label;
     petEl.setAttribute('aria-label', label);
 
-    feedStatusEl.textContent = `Give ${label} a snack (placeholder).`;
     if (shopStatusEl) {
       shopStatusEl.textContent = `The travelling merchant has not arrived yet.`;
     }
+    if (activeScreen === 'feed') {
+      renderSquadList();
+    }
+  }
+
+  function squadPortraitSheet(sheetKey) {
+    if (sheetKey === 'female') {
+      return (findCharacter('female-0') || {}).sheetImage || groveFemaleImage;
+    }
+    return campNpcImage || (findCharacter('male-7') || {}).sheetImage;
+  }
+
+  function paintSquadPortrait(canvas, sheetKey, col) {
+    if (!canvas) {
+      return;
+    }
+    const img = squadPortraitSheet(sheetKey);
+    const dpr = window.devicePixelRatio || 1;
+    const size = 44;
+    canvas.width = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (!img) {
+      return;
+    }
+    const cols = sheetKey === 'female' ? 12 : 11;
+    const rows = 14;
+    const cellW = Math.floor(img.naturalWidth / cols);
+    const cellH = Math.floor(img.naturalHeight / rows);
+    ctx.drawImage(img, col * cellW, 0, cellW, cellH, 0, 0, size, size);
+  }
+
+  function buildSquadRosterEntries(state) {
+    if (!state || !state.characterId) {
+      return [];
+    }
+    const entries = [];
+    const party = companionCountFromState(state);
+    const recruitLandmarkOrder = recruitLandmarkOrderFromState(state);
+    if (hasRecruitedKind(state, 'tent')) {
+      const flavor = SQUAD_FLAVOR.tent;
+      entries.push({
+        id: 'tent',
+        kind: 'tent',
+        locked: true,
+        name: flavor.name,
+        age: flavor.age,
+        description: flavor.description,
+        sheet: 'male',
+        col: COMPANION_BY_KIND.tent.col,
+      });
+    }
+    const hero = findCharacter(state.characterId);
+    const heroFlavor = SQUAD_FLAVOR[state.characterId] || { age: 25, description: 'Leader of the travelling party.' };
+    entries.push({
+      id: 'hero',
+      kind: 'hero',
+      locked: true,
+      name: displayName(state),
+      age: heroFlavor.age,
+      description: heroFlavor.description,
+      sheet: hero && hero.id === 'male-7' ? 'male' : 'female',
+      col: hero ? hero.col : 0,
+    });
+    const leftOrder = normalizeLeftTrailOrder(
+      state.leftTrailOrder,
+      party,
+      recruitLandmarkOrder
+    );
+    leftOrder.forEach((kind) => {
+      const slot = COMPANION_BY_KIND[kind];
+      const flavor = SQUAD_FLAVOR[kind];
+      if (!slot || !flavor) {
+        return;
+      }
+      entries.push({
+        id: kind,
+        kind,
+        locked: false,
+        name: flavor.name,
+        age: flavor.age,
+        description: flavor.description,
+        sheet: slot.sheet,
+        col: slot.col,
+      });
+    });
+    return entries;
+  }
+
+  function applyLeftTrailReorder(nextOrder) {
+    if (!latestState) {
+      return;
+    }
+    const party = companionCountFromState(latestState);
+    const recruitLandmarkOrder = recruitLandmarkOrderFromState(latestState);
+    const normalized = normalizeLeftTrailOrder(
+      nextOrder,
+      party,
+      recruitLandmarkOrder
+    );
+    const expected = defaultLeftTrailOrderFromParty(party, recruitLandmarkOrder);
+    if (normalized.length !== expected.length) {
+      return;
+    }
+    latestState = { ...latestState, leftTrailOrder: normalized, recruitLandmarkOrder };
+    renderSquadList();
+    if (!companionFormationEasing) {
+      setCameraTargetForParty(latestState.partySize || 1);
+      startCompanionFormationEase();
+      if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
+        startCameraEase();
+      }
+    }
+    vscode.postMessage({
+      type: 'action',
+      action: 'reorderParty',
+      leftTrailOrder: normalized,
+    });
+  }
+
+  function renderSquadList() {
+    if (!squadListEl) {
+      return;
+    }
+    const entries = buildSquadRosterEntries(latestState);
+    squadListEl.innerHTML = '';
+    if (!entries.length) {
+      const empty = document.createElement('p');
+      empty.className = 'status';
+      empty.textContent = 'Choose a character to form a squad.';
+      squadListEl.appendChild(empty);
+      return;
+    }
+    entries.forEach((entry) => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = `squad-row${entry.locked ? ' squad-row-locked' : ''}`;
+      row.setAttribute('role', 'listitem');
+      row.dataset.kind = entry.kind;
+      row.draggable = !entry.locked;
+      if (entry.locked) {
+        row.setAttribute('aria-disabled', 'true');
+      }
+
+      const portrait = document.createElement('canvas');
+      portrait.className = 'squad-portrait';
+      portrait.setAttribute('aria-hidden', 'true');
+      paintSquadPortrait(portrait, entry.sheet, entry.col);
+
+      const body = document.createElement('div');
+      body.className = 'squad-row-body';
+      const title = document.createElement('div');
+      title.className = 'squad-row-title';
+      title.textContent = entry.name;
+      const meta = document.createElement('div');
+      meta.className = 'squad-row-meta';
+      meta.textContent = entry.locked
+        ? `Age ${entry.age} · Locked`
+        : `Age ${entry.age} · Drag to reorder`;
+      const desc = document.createElement('div');
+      desc.className = 'squad-row-desc';
+      desc.textContent = entry.description;
+      body.appendChild(title);
+      body.appendChild(meta);
+      body.appendChild(desc);
+
+      row.appendChild(portrait);
+      row.appendChild(body);
+      squadListEl.appendChild(row);
+    });
+  }
+
+  let squadDragKind = null;
+
+  if (squadListEl) {
+    squadListEl.addEventListener('dragstart', (event) => {
+      const row = event.target && event.target.closest ? event.target.closest('.squad-row') : null;
+      if (!row || row.classList.contains('squad-row-locked')) {
+        event.preventDefault();
+        return;
+      }
+      squadDragKind = row.dataset.kind;
+      row.classList.add('squad-row-dragging');
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', squadDragKind);
+      }
+    });
+    squadListEl.addEventListener('dragend', (event) => {
+      const row = event.target && event.target.closest ? event.target.closest('.squad-row') : null;
+      if (row) {
+        row.classList.remove('squad-row-dragging');
+      }
+      squadDragKind = null;
+      squadListEl.querySelectorAll('.squad-row-drop').forEach((el) => {
+        el.classList.remove('squad-row-drop');
+      });
+    });
+    squadListEl.addEventListener('dragover', (event) => {
+      const row = event.target && event.target.closest ? event.target.closest('.squad-row') : null;
+      if (!row || row.classList.contains('squad-row-locked') || !squadDragKind) {
+        return;
+      }
+      event.preventDefault();
+      squadListEl.querySelectorAll('.squad-row-drop').forEach((el) => {
+        el.classList.remove('squad-row-drop');
+      });
+      row.classList.add('squad-row-drop');
+    });
+    squadListEl.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const row = event.target && event.target.closest ? event.target.closest('.squad-row') : null;
+      squadListEl.querySelectorAll('.squad-row-drop').forEach((el) => {
+        el.classList.remove('squad-row-drop');
+      });
+      if (!row || row.classList.contains('squad-row-locked') || !squadDragKind) {
+        return;
+      }
+      const targetKind = row.dataset.kind;
+      if (!targetKind || targetKind === 'hero' || targetKind === 'tent' || targetKind === squadDragKind) {
+        return;
+      }
+      const order = normalizeLeftTrailOrder(
+        latestState && latestState.leftTrailOrder,
+        companionCountFromState(latestState),
+        recruitLandmarkOrderFromState(latestState)
+      ).slice();
+      const from = order.indexOf(squadDragKind);
+      const to = order.indexOf(targetKind);
+      if (from < 0 || to < 0) {
+        return;
+      }
+      order.splice(from, 1);
+      order.splice(to, 0, squadDragKind);
+      applyLeftTrailReorder(order);
+    });
   }
 
   function renderState(state) {
@@ -4465,6 +5223,10 @@
 
   prepareVillageArt().catch((error) => {
     console.error('[travelling-kingdom] village art prep failed', error);
+  });
+
+  prepareWaysideArt().catch((error) => {
+    console.error('[travelling-kingdom] wayside art prep failed', error);
   });
 
   prepareParallax().catch((error) => {

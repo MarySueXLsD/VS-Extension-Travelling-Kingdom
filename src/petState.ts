@@ -30,27 +30,102 @@ export interface PetState {
    * Level-up happens on depart, not when meters fill.
    */
   awaitingDeparture: boolean;
-  /** Traveling party size (grows as companions join at landmarks). */
+  /** Traveling party size (grows as companions join at landmarks). Cap 15. */
   partySize: number;
   /**
-   * Shuffled order of the first three recruit landmarks (camp / grove / town).
-   * Level 1 → order[0], level 2 → order[1], level 3 → order[2].
+   * Legacy shuffle of the first three recruit landmarks (camp / grove / town).
+   * Kept for migration into recruitLandmarkOrder.
    */
   earlyLandmarkOrder: EarlyLandmarkKind[];
+  /**
+   * Shuffled order of all recruit landmarks (14). Level 1 → [0], … level 14 → [13].
+   */
+  recruitLandmarkOrder: RecruitKind[];
+  /**
+   * Left-trail recruit kinds, index 0 = closest behind the hero.
+   * Never includes tent (guard stays on the right).
+   */
+  leftTrailOrder: LeftTrailKind[];
 }
 
 export type EarlyLandmarkKind = 'camp' | 'grove' | 'town';
+export type RecruitKind =
+  | EarlyLandmarkKind
+  | 'tent'
+  | 'stone'
+  | 'market'
+  | 'cloister'
+  | 'male0'
+  | 'male1'
+  | 'male2'
+  | 'male6'
+  | 'male8'
+  | 'male10'
+  | 'female11';
+export type LeftTrailKind = Exclude<RecruitKind, 'tent'>;
+export type LandmarkKind = RecruitKind;
+
+export const RECRUIT_KIND_COUNT = 14;
+export const MAX_PARTY_SIZE = 15;
 
 export const EARLY_LANDMARK_KINDS: readonly EarlyLandmarkKind[] = ['camp', 'grove', 'town'];
+export const RECRUIT_LANDMARK_KINDS: readonly RecruitKind[] = [
+  'camp',
+  'grove',
+  'town',
+  'tent',
+  'stone',
+  'market',
+  'cloister',
+  'male0',
+  'male1',
+  'male2',
+  'male6',
+  'male8',
+  'male10',
+  'female11',
+];
+export const LEFT_TRAIL_KINDS: readonly LeftTrailKind[] = RECRUIT_LANDMARK_KINDS.filter(
+  (k): k is LeftTrailKind => k !== 'tent'
+);
 
+export const RECRUIT_LANDMARK_NAMES: Record<RecruitKind, string> = {
+  camp: 'Soldier Camp',
+  grove: 'Apple Grove',
+  town: 'River Town',
+  tent: 'Scout Camp',
+  stone: 'Wayside Stone',
+  market: 'Market Village',
+  cloister: 'Cloister Village',
+  male0: 'Roadside Watch',
+  male1: 'Porter Bend',
+  male2: 'Mill Creek',
+  male6: 'Hedge Trail',
+  male8: 'Anvil Rest',
+  male10: 'Brook Crossing',
+  female11: 'Lantern Meadow',
+};
+
+/** @deprecated Prefer RECRUIT_LANDMARK_NAMES */
 export const EARLY_LANDMARK_NAMES: Record<EarlyLandmarkKind, string> = {
   camp: 'Soldier Camp',
   grove: 'Apple Grove',
-  town: 'Whore Town',
+  town: 'River Town',
 };
 
 export function shuffleEarlyLandmarks(rand: () => number = Math.random): EarlyLandmarkKind[] {
   const arr: EarlyLandmarkKind[] = [...EARLY_LANDMARK_KINDS];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+export function shuffleRecruitLandmarks(rand: () => number = Math.random): RecruitKind[] {
+  const arr: RecruitKind[] = [...RECRUIT_LANDMARK_KINDS];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     const tmp = arr[i];
@@ -81,29 +156,117 @@ export function isValidEarlyLandmarkOrder(raw: unknown): boolean {
   return cleaned.length === 3 && new Set(cleaned).size === 3;
 }
 
+export function isValidRecruitLandmarkOrder(raw: unknown): boolean {
+  if (!Array.isArray(raw) || raw.length !== RECRUIT_KIND_COUNT) {
+    return false;
+  }
+  const allowed = new Set<string>(RECRUIT_LANDMARK_KINDS);
+  const cleaned = raw.filter((k) => allowed.has(String(k)));
+  return cleaned.length === RECRUIT_KIND_COUNT && new Set(cleaned).size === RECRUIT_KIND_COUNT;
+}
+
+/**
+ * Normalize or build recruitLandmarkOrder. If raw is invalid, seed from legacy
+ * earlyLandmarkOrder (first three) then shuffle the rest.
+ */
+export function normalizeRecruitLandmarkOrder(
+  raw: unknown,
+  earlyFallback?: EarlyLandmarkKind[] | undefined,
+  rand: () => number = Math.random
+): RecruitKind[] {
+  if (isValidRecruitLandmarkOrder(raw)) {
+    return (raw as RecruitKind[]).slice();
+  }
+  const allowed = new Set<string>(RECRUIT_LANDMARK_KINDS);
+  const cleaned: RecruitKind[] = [];
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const key = String(item);
+      if (!allowed.has(key) || cleaned.includes(key as RecruitKind)) {
+        continue;
+      }
+      cleaned.push(key as RecruitKind);
+    }
+  }
+  const early = earlyFallback ? normalizeEarlyLandmarkOrder(earlyFallback) : [];
+  for (const kind of early) {
+    if (!cleaned.includes(kind)) {
+      cleaned.push(kind);
+    }
+  }
+  const rest = RECRUIT_LANDMARK_KINDS.filter((k) => !cleaned.includes(k));
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = rest[i];
+    rest[i] = rest[j];
+    rest[j] = tmp;
+  }
+  return [...cleaned, ...rest].slice(0, RECRUIT_KIND_COUNT);
+}
+
 export function landmarkKindForLevel(
-  order: EarlyLandmarkKind[] | undefined,
-  level: number
-): EarlyLandmarkKind | 'tent' | 'stone' | 'market' | 'cloister' | null {
+  recruitOrder: RecruitKind[] | EarlyLandmarkKind[] | undefined,
+  level: number,
+  earlyFallback?: EarlyLandmarkKind[]
+): RecruitKind | null {
   const lvl = Math.floor(level);
-  if (lvl === 4) {
-    return 'tent';
-  }
-  if (lvl === 5) {
-    return 'stone';
-  }
-  if (lvl === 6) {
-    return 'market';
-  }
-  if (lvl === 7) {
-    return 'cloister';
-  }
   const idx = lvl - 1;
-  if (idx < 0 || idx > 2) {
+  if (idx < 0 || idx >= RECRUIT_KIND_COUNT) {
     return null;
   }
-  const normalized = normalizeEarlyLandmarkOrder(order);
+  const normalized = normalizeRecruitLandmarkOrder(recruitOrder, earlyFallback);
   return normalized[idx] || null;
+}
+
+/** Expected left-trail kinds for a party size (newest / closest first). */
+export function defaultLeftTrailOrderFromParty(
+  partySize: number,
+  recruitOrder: RecruitKind[] | EarlyLandmarkKind[] | undefined,
+  earlyFallback?: EarlyLandmarkKind[]
+): LeftTrailKind[] {
+  const party = Math.max(1, Math.min(MAX_PARTY_SIZE, Math.floor(partySize || 1)));
+  const order = normalizeRecruitLandmarkOrder(recruitOrder, earlyFallback);
+  const recruited = order.slice(0, Math.max(0, party - 1));
+  const leftChrono = recruited.filter((k): k is LeftTrailKind => k !== 'tent');
+  return leftChrono.slice().reverse();
+}
+
+export function normalizeLeftTrailOrder(
+  raw: unknown,
+  partySize: number,
+  recruitOrder: RecruitKind[] | EarlyLandmarkKind[] | undefined,
+  earlyFallback?: EarlyLandmarkKind[]
+): LeftTrailKind[] {
+  const expected = defaultLeftTrailOrderFromParty(partySize, recruitOrder, earlyFallback);
+  const expectedSet = new Set<string>(expected);
+  const allowed = new Set<string>(LEFT_TRAIL_KINDS);
+  const cleaned: LeftTrailKind[] = [];
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const key = String(item);
+      if (!allowed.has(key) || !expectedSet.has(key) || cleaned.includes(key as LeftTrailKind)) {
+        continue;
+      }
+      cleaned.push(key as LeftTrailKind);
+    }
+  }
+  for (const kind of expected) {
+    if (!cleaned.includes(kind)) {
+      cleaned.push(kind);
+    }
+  }
+  return cleaned;
+}
+
+export function hasRecruitedKindInParty(
+  partySize: number,
+  kind: RecruitKind,
+  recruitOrder: RecruitKind[] | undefined,
+  earlyFallback?: EarlyLandmarkKind[]
+): boolean {
+  const party = Math.max(1, Math.min(MAX_PARTY_SIZE, Math.floor(partySize || 1)));
+  const order = normalizeRecruitLandmarkOrder(recruitOrder, earlyFallback);
+  return order.slice(0, Math.max(0, party - 1)).includes(kind);
 }
 
 const STORAGE_KEY = 'travellingKingdom.petState';
@@ -171,6 +334,8 @@ export function createDefaultState(): PetState {
     awaitingDeparture: false,
     partySize: 1,
     earlyLandmarkOrder: shuffleEarlyLandmarks(),
+    recruitLandmarkOrder: shuffleRecruitLandmarks(),
+    leftTrailOrder: [],
   };
 }
 
@@ -229,8 +394,23 @@ export class PetStateStore {
       clampedMeters = needed;
       awaitingDeparture = true;
     }
-    const hadLandmarkOrder = isValidEarlyLandmarkOrder(rest.earlyLandmarkOrder);
+    const hadEarlyOrder = isValidEarlyLandmarkOrder(rest.earlyLandmarkOrder);
     const earlyLandmarkOrder = normalizeEarlyLandmarkOrder(rest.earlyLandmarkOrder);
+    const hadRecruitOrder = isValidRecruitLandmarkOrder(rest.recruitLandmarkOrder);
+    const recruitLandmarkOrder = normalizeRecruitLandmarkOrder(
+      rest.recruitLandmarkOrder,
+      earlyLandmarkOrder
+    );
+    const partySize = Math.max(
+      1,
+      Math.min(MAX_PARTY_SIZE, Math.floor(typeof rest.partySize === 'number' ? rest.partySize : 1))
+    );
+    const leftTrailOrder = normalizeLeftTrailOrder(
+      rest.leftTrailOrder,
+      partySize,
+      recruitLandmarkOrder,
+      earlyLandmarkOrder
+    );
     const next: PetState = {
       ...createDefaultState(),
       ...rest,
@@ -242,11 +422,13 @@ export class PetStateStore {
       minimalUi: rest.minimalUi === true,
       minimalBg: rest.minimalBg === true,
       awaitingDeparture,
-      partySize: Math.max(1, Math.floor(typeof rest.partySize === 'number' ? rest.partySize : 1)),
+      partySize,
       earlyLandmarkOrder,
+      recruitLandmarkOrder,
+      leftTrailOrder,
     };
-    // Persist a newly assigned shuffle so reload does not reshuffle mid-run.
-    if (!hadLandmarkOrder) {
+    // Persist newly assigned shuffles / migrations so reload does not reshuffle mid-run.
+    if (!hadEarlyOrder || !hadRecruitOrder || !Array.isArray(rest.leftTrailOrder)) {
       void this.globalState.update(STORAGE_KEY, next);
     }
     return next;
@@ -280,6 +462,8 @@ export class PetStateStore {
       level: 1,
       partySize: 1,
       earlyLandmarkOrder: shuffleEarlyLandmarks(),
+      recruitLandmarkOrder: shuffleRecruitLandmarks(),
+      leftTrailOrder: [],
     };
   }
 
@@ -322,21 +506,30 @@ export class PetStateStore {
     }
     const now = Date.now();
     const level = current.level;
+    const recruitLandmarkOrder = normalizeRecruitLandmarkOrder(
+      current.recruitLandmarkOrder,
+      current.earlyLandmarkOrder
+    );
     let partySize = Math.max(1, current.partySize || 1);
-    if (level === 1) {
-      partySize = Math.max(partySize, 2);
-    } else if (level === 2) {
-      partySize = Math.max(partySize, 3);
-    } else if (level === 3) {
-      partySize = Math.max(partySize, 4);
-    } else if (level === 4) {
-      partySize = Math.max(partySize, 5);
-    } else if (level === 5) {
-      partySize = Math.max(partySize, 6);
-    } else if (level === 6) {
-      partySize = Math.max(partySize, 7);
-    } else if (level === 7) {
-      partySize = Math.max(partySize, 8);
+    if (level >= 1 && level <= RECRUIT_KIND_COUNT) {
+      partySize = Math.max(partySize, Math.min(MAX_PARTY_SIZE, level + 1));
+    }
+    const departedKind = landmarkKindForLevel(
+      recruitLandmarkOrder,
+      level,
+      current.earlyLandmarkOrder
+    );
+    let leftTrailOrder = normalizeLeftTrailOrder(
+      current.leftTrailOrder,
+      partySize,
+      recruitLandmarkOrder,
+      current.earlyLandmarkOrder
+    );
+    if (departedKind && departedKind !== 'tent') {
+      leftTrailOrder = [
+        departedKind,
+        ...leftTrailOrder.filter((kind) => kind !== departedKind),
+      ];
     }
     const next: PetState = {
       ...current,
@@ -344,9 +537,61 @@ export class PetStateStore {
       meters: 0,
       awaitingDeparture: false,
       partySize,
+      recruitLandmarkOrder,
+      leftTrailOrder,
       lastActionAt: now,
       lastMetersTick: now,
       mood: 'happy',
+    };
+    await this.save(next);
+    return next;
+  }
+
+  /** Reorder left-trail companions (permutation of current left recruits). */
+  async reorderParty(rawOrder: unknown): Promise<PetState> {
+    const current = this.load();
+    if (!current.characterId) {
+      return current;
+    }
+    const recruitLandmarkOrder = normalizeRecruitLandmarkOrder(
+      current.recruitLandmarkOrder,
+      current.earlyLandmarkOrder
+    );
+    const expected = new Set(
+      defaultLeftTrailOrderFromParty(
+        current.partySize,
+        recruitLandmarkOrder,
+        current.earlyLandmarkOrder
+      )
+    );
+    const allowed = new Set<string>(LEFT_TRAIL_KINDS);
+    const cleaned: LeftTrailKind[] = [];
+    if (Array.isArray(rawOrder)) {
+      for (const item of rawOrder) {
+        const key = String(item);
+        if (
+          !allowed.has(key) ||
+          !expected.has(key as LeftTrailKind) ||
+          cleaned.includes(key as LeftTrailKind)
+        ) {
+          continue;
+        }
+        cleaned.push(key as LeftTrailKind);
+      }
+    }
+    if (cleaned.length !== expected.size) {
+      return current;
+    }
+    for (const kind of expected) {
+      if (!cleaned.includes(kind)) {
+        return current;
+      }
+    }
+    const next: PetState = {
+      ...current,
+      recruitLandmarkOrder,
+      leftTrailOrder: cleaned,
+      lastActionAt: Date.now(),
     };
     await this.save(next);
     return next;
