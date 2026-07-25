@@ -902,7 +902,6 @@
       campActive &&
         landmarkKind === 'grove' &&
         latestState &&
-        shouldShowGrove(latestState) &&
         companionCountFromState(latestState) < 3
     );
   }
@@ -1306,6 +1305,9 @@
     if (campNpcEl && !companionJoined) {
       campNpcEl.hidden = true;
     }
+    if (companion2El && (!latestState || companionCountFromState(latestState) < 3)) {
+      companion2El.hidden = true;
+    }
     if (departBtnEl) {
       departBtnEl.hidden = true;
     }
@@ -1325,7 +1327,7 @@
     if (campActive) {
       campWorldLocked = true;
     }
-    // Already-recruited (reload): skip ceremony. Fresh camp depart runs startRecruitCeremony.
+    // Already-recruited (reload): skip ceremony. Fresh landmark depart runs startRecruitCeremony.
     if (!recruitBusy) {
       syncCompanionFromState(state);
     }
@@ -1347,18 +1349,40 @@
     }
   }
 
-  function getNpcScreenLeft() {
+  function getRecruitScreenLeft() {
     const u = campUnit();
-    return Math.round(campPotWorldX + 0.85 * u - decorScroll);
+    const npcOffset = landmarkKind === 'grove' ? GROVE_NPC_OX : 0.85;
+    return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
-  /** Traveler is in the follow slot behind the pet (screen space). */
-  function npcAtFollowSlot() {
+  /** Recruit is in their future follow slot behind the existing party trail. */
+  function recruitAtFollowSlot(recruitSlotIndex) {
     const petLeft = petEl ? petEl.offsetLeft : petLeadLeft;
-    return getNpcScreenLeft() <= petLeft - COMPANION_FOLLOW_GAP + 0.5;
+    return (
+      getRecruitScreenLeft() <=
+      petLeft - (recruitSlotIndex + 1) * COMPANION_FOLLOW_GAP + 0.5
+    );
   }
 
-  function startRecruitCeremony(joinedState) {
+  function positionRecruitNpc() {
+    if (landmarkKind === 'grove') {
+      positionGroveNpc();
+    } else {
+      positionCampNpc();
+    }
+  }
+
+  function drawRecruitNpcFrame(frameIndex) {
+    if (landmarkKind === 'grove') {
+      drawGroveNpcFrame(frameIndex);
+    } else {
+      drawCampNpcFrame(frameIndex);
+    }
+  }
+
+  function startRecruitCeremony(joinedState, options) {
+    const joinPartySize = (options && options.joinPartySize) || 2;
+    const recruitSlotIndex = joinPartySize - 2;
     recruitBusy = true;
     recruitPhase = 'approach';
     recruitJoinedState = joinedState;
@@ -1388,12 +1412,12 @@
       if (character && character.sheetImage) {
         drawWalkFrame(character, 0, false);
       }
-      positionCampNpc();
+      positionRecruitNpc();
       phaseUntil = timestamp + RECRUIT_FACE_MS;
     };
 
-    // Already past the meet point (pot under pet can put NPC nearly behind).
-    if (npcAtFollowSlot()) {
+    // Already past the meet point (landmark under pet can put recruit nearly behind).
+    if (recruitAtFollowSlot(recruitSlotIndex)) {
       beginFaceCeremony(performance.now());
     } else {
       enableTravelAccrual();
@@ -1411,22 +1435,22 @@
 
       if (recruitPhase === 'approach') {
         petFaceRight = true;
-        positionCampNpc();
-        if (npcAtFollowSlot()) {
+        positionRecruitNpc();
+        if (recruitAtFollowSlot(recruitSlotIndex)) {
           beginFaceCeremony(timestamp);
         }
       } else if (recruitPhase === 'petFace') {
-        positionCampNpc();
+        positionRecruitNpc();
         if (timestamp >= phaseUntil) {
           recruitPhase = 'npcFace';
           npcFaceRight = true;
-          drawCampNpcFrame(campNpcFrame);
-          positionCampNpc();
+          drawRecruitNpcFrame(campNpcFrame);
+          positionRecruitNpc();
           phaseUntil = timestamp + RECRUIT_FACE_MS;
         }
       } else if (recruitPhase === 'npcFace') {
-        drawCampNpcFrame(campNpcFrame);
-        positionCampNpc();
+        drawRecruitNpcFrame(campNpcFrame);
+        positionRecruitNpc();
         if (timestamp >= phaseUntil) {
           recruitPhase = 'petResume';
           petFaceRight = true;
@@ -1437,7 +1461,7 @@
         }
       } else if (recruitPhase === 'petResume') {
         if (timestamp >= phaseUntil) {
-          finishRecruitCeremony();
+          finishRecruitCeremony(joinPartySize);
           return;
         }
       }
@@ -1449,7 +1473,7 @@
     recruitAnimId = requestAnimationFrame(tick);
   }
 
-  function finishRecruitCeremony() {
+  function finishRecruitCeremony(joinPartySize) {
     stopRecruitAnim();
     const joined = recruitJoinedState || latestState;
     recruitJoinedState = null;
@@ -1461,20 +1485,20 @@
     if (joined) {
       latestState = {
         ...joined,
-        partySize: Math.max(joined.partySize || 1, 2),
+        partySize: Math.max(joined.partySize || 1, joinPartySize || 2),
         awaitingDeparture: false,
         screen: activeScreen || joined.screen || 'home',
       };
     } else if (latestState) {
       latestState = {
         ...latestState,
-        partySize: Math.max(latestState.partySize || 1, 2),
+        partySize: Math.max(latestState.partySize || 1, joinPartySize || 2),
         awaitingDeparture: false,
       };
     }
     departing = false;
     updateMetersUi(latestState);
-    // Companion owns the hooded canvas now — keep tents/extras, not idle-at-pot.
+    // Companions own their walking canvases now — keep landmark scenery, not idle recruits.
     positionCompanionsBehindPet();
     drawActiveCompanionWalkFrames(0);
 
@@ -1485,7 +1509,7 @@
 
     // Join + resume travel immediately; ease camera framing in parallel while scrolling
     // so the lead shift reads as a camera pan, not sliding on a frozen plate.
-    setCameraTargetForParty(latestState.partySize || 2);
+    setCameraTargetForParty(latestState.partySize || joinPartySize || 2);
     syncCampWorldPosition();
     paintDecor();
     positionCompanionsBehindPet();
@@ -3154,6 +3178,7 @@
       departBtnEl.hidden = true;
       flushTravelMeters();
       const next = applyDepartLocal(latestState);
+      const joinPartySize = next.partySize;
       // Advance the leg immediately; party size + companion wait for the meet sequence.
       latestState = {
         ...next,
@@ -3162,7 +3187,7 @@
       };
       traveledPx = 0;
       updateMetersUi(latestState);
-      startRecruitCeremony(next);
+      startRecruitCeremony(next, { joinPartySize });
       vscode.postMessage({ type: 'action', action: 'depart' });
     });
   }
