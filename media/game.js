@@ -1102,17 +1102,36 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(
-      img,
-      GROVE_NPC_COL * cellW,
-      row * cellH,
-      cellW,
-      cellH,
-      0,
-      0,
-      size,
-      size
-    );
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        img,
+        GROVE_NPC_COL * cellW,
+        row * cellH,
+        cellW,
+        cellH,
+        0,
+        0,
+        size,
+        size
+      );
+      ctx.restore();
+    } else {
+      // Sheet faces left by default.
+      ctx.drawImage(
+        img,
+        GROVE_NPC_COL * cellW,
+        row * cellH,
+        cellW,
+        cellH,
+        0,
+        0,
+        size,
+        size
+      );
+    }
   }
 
   function drawCompanionWalkFrame(slot, frameIndex) {

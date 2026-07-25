@@ -23,3 +23,15 @@ All listed automated checks completed with exit code 0. The VS Code webview-spec
 1. Soldier Camp recruit results in party 2.
 2. Apple Grove recruit results in party 3 with two followers and eased camera framing.
 3. Reload with party 3 retains both followers without replaying a ceremony.
+
+## Review fix — grove NPC facing during recruit ceremony
+
+**Finding:** `drawGroveNpcFrame` ignored `npcFaceRight`. During the `npcFace` phase of the recruit ceremony, `npcFaceRight = true` is set but the grove idle draw did not mirror like `drawCampNpcFrame` does.
+
+**Fix:** Updated `drawGroveNpcFrame` in both `media/game.js` and `media/main.js` to mirror the female sprite when `npcFaceRight` is true (translate + scale -1, same pattern as camp NPC draw).
+
+**Verification:**
+
+- `node --check media/game.js` — exit 0
+- `node --check media/main.js` — exit 0
+- `git diff --no-index --exit-code media/game.js media/main.js` — exit 0 (byte-identical)
