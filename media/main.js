@@ -362,17 +362,53 @@
     if (exact && typeof exact.meters === 'number' && exact.meters > 0) {
       return Math.floor(exact.meters);
     }
-    // Fallback if destinations.json is not loaded yet (matches destinations.json early legs).
-    if (lvl <= 1) {
-      return 30;
-    }
-    if (lvl === 2) {
-      return 30;
-    }
-    if (lvl === 3) {
+    // Fallback if destinations.json is not loaded yet (matches early legs).
+    if (lvl <= 3) {
       return 50;
     }
     return (lvl - 2) * 500;
+  }
+
+  const EARLY_LANDMARK_KINDS = ['camp', 'grove', 'town'];
+  const EARLY_LANDMARK_NAMES = {
+    camp: 'Soldier Camp',
+    grove: 'Apple Grove',
+    town: 'Whore Town',
+  };
+
+  function shuffleEarlyLandmarks() {
+    const arr = EARLY_LANDMARK_KINDS.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function normalizeEarlyLandmarkOrder(raw) {
+    if (!Array.isArray(raw) || raw.length !== 3) {
+      return shuffleEarlyLandmarks();
+    }
+    const allowed = new Set(EARLY_LANDMARK_KINDS);
+    const cleaned = raw.filter((k) => allowed.has(k));
+    if (cleaned.length !== 3 || new Set(cleaned).size !== 3) {
+      return shuffleEarlyLandmarks();
+    }
+    return cleaned;
+  }
+
+  function earlyLandmarkOrderFromState(state) {
+    return normalizeEarlyLandmarkOrder(state && state.earlyLandmarkOrder);
+  }
+
+  function landmarkKindAtLevel(state, level) {
+    const idx = Math.floor(Number(level) || 1) - 1;
+    if (idx < 0 || idx > 2) {
+      return null;
+    }
+    return earlyLandmarkOrderFromState(state)[idx] || null;
   }
 
   function applyTravelLocal(state, gain) {
@@ -405,16 +441,22 @@
   }
 
   function destinationNameForLevel(level) {
+    const lvl = Math.max(1, Math.floor(Number(level) || 1));
+    if (latestState && lvl >= 1 && lvl <= 3) {
+      const kind = landmarkKindAtLevel(latestState, lvl);
+      if (kind && EARLY_LANDMARK_NAMES[kind]) {
+        return EARLY_LANDMARK_NAMES[kind];
+      }
+    }
     if (!destinations.length) {
       return 'Meadow Village';
     }
-    const exact = destinations.find((d) => d.level === level);
+    const exact = destinations.find((d) => Number(d.level) === lvl);
     if (exact && exact.name) {
       return exact.name;
     }
     const idx =
-      ((Math.max(1, Math.floor(level || 1)) - 1) % destinations.length + destinations.length) %
-      destinations.length;
+      ((lvl - 1) % destinations.length + destinations.length) % destinations.length;
     return destinations[idx].name || 'Meadow Village';
   }
 
@@ -521,6 +563,7 @@
         meters: latestState.meters,
         awaitingDeparture: keepAwaiting,
         partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
+        earlyLandmarkOrder: earlyLandmarkOrderFromState(latestState),
       };
     }
     // Host caught up or ahead: drop matching pending so we don't double-count.
@@ -543,11 +586,17 @@
         meters: latestState.meters,
         awaitingDeparture: true,
         partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
+        earlyLandmarkOrder: earlyLandmarkOrderFromState(latestState),
       };
     }
     return {
       ...server,
       partySize: Math.max(server.partySize || 1, latestState.partySize || 1),
+      earlyLandmarkOrder: earlyLandmarkOrderFromState(
+        Array.isArray(server.earlyLandmarkOrder) && server.earlyLandmarkOrder.length === 3
+          ? server
+          : latestState
+      ),
     };
   }
 
@@ -781,18 +830,15 @@
   }
 
   function shouldShowCamp(state) {
-    if (!state || !state.characterId) {
-      return false;
-    }
-    return state.level === CAMP_DEST_LEVEL;
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'camp');
   }
 
   function shouldShowGrove(state) {
-    return Boolean(state && state.characterId && state.level === GROVE_DEST_LEVEL);
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'grove');
   }
 
   function shouldShowTown(state) {
-    return Boolean(state && state.characterId && state.level === TOWN_DEST_LEVEL);
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'town');
   }
 
   function shouldShowLandmark(state) {
@@ -800,16 +846,10 @@
   }
 
   function landmarkKindForState(state) {
-    if (shouldShowCamp(state)) {
-      return 'camp';
+    if (!state || !state.characterId) {
+      return null;
     }
-    if (shouldShowGrove(state)) {
-      return 'grove';
-    }
-    if (shouldShowTown(state)) {
-      return 'town';
-    }
-    return null;
+    return landmarkKindAtLevel(state, state.level);
   }
 
   function remainingMetersForCamp(state) {

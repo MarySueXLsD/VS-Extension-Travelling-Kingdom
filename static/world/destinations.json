@@ -1,7 +1,7 @@
 {
   "destinations": [
-    { "level": 1, "name": "Soldier Camp", "meters": 30 },
-    { "level": 2, "name": "Apple Grove", "meters": 30 },
+    { "level": 1, "name": "Soldier Camp", "meters": 50 },
+    { "level": 2, "name": "Apple Grove", "meters": 50 },
     { "level": 3, "name": "Whore Town", "meters": 50 },
     { "level": 4, "name": "Copper Crossroads", "meters": 1000 },
     { "level": 5, "name": "Mist Harbor", "meters": 1500 },

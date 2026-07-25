@@ -32,6 +32,65 @@ export interface PetState {
   awaitingDeparture: boolean;
   /** Traveling party size (grows as companions join at landmarks). */
   partySize: number;
+  /**
+   * Shuffled order of the first three recruit landmarks (camp / grove / town).
+   * Level 1 → order[0], level 2 → order[1], level 3 → order[2].
+   */
+  earlyLandmarkOrder: EarlyLandmarkKind[];
+}
+
+export type EarlyLandmarkKind = 'camp' | 'grove' | 'town';
+
+export const EARLY_LANDMARK_KINDS: readonly EarlyLandmarkKind[] = ['camp', 'grove', 'town'];
+
+export const EARLY_LANDMARK_NAMES: Record<EarlyLandmarkKind, string> = {
+  camp: 'Soldier Camp',
+  grove: 'Apple Grove',
+  town: 'Whore Town',
+};
+
+export function shuffleEarlyLandmarks(rand: () => number = Math.random): EarlyLandmarkKind[] {
+  const arr: EarlyLandmarkKind[] = [...EARLY_LANDMARK_KINDS];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+export function normalizeEarlyLandmarkOrder(raw: unknown): EarlyLandmarkKind[] {
+  if (!Array.isArray(raw) || raw.length !== 3) {
+    return shuffleEarlyLandmarks();
+  }
+  const allowed = new Set<string>(EARLY_LANDMARK_KINDS);
+  const cleaned = raw.filter((k): k is EarlyLandmarkKind => allowed.has(String(k)));
+  if (cleaned.length !== 3 || new Set(cleaned).size !== 3) {
+    return shuffleEarlyLandmarks();
+  }
+  return cleaned;
+}
+
+export function isValidEarlyLandmarkOrder(raw: unknown): boolean {
+  if (!Array.isArray(raw) || raw.length !== 3) {
+    return false;
+  }
+  const allowed = new Set<string>(EARLY_LANDMARK_KINDS);
+  const cleaned = raw.filter((k) => allowed.has(String(k)));
+  return cleaned.length === 3 && new Set(cleaned).size === 3;
+}
+
+export function landmarkKindForLevel(
+  order: EarlyLandmarkKind[] | undefined,
+  level: number
+): EarlyLandmarkKind | null {
+  const idx = Math.floor(level) - 1;
+  if (idx < 0 || idx > 2) {
+    return null;
+  }
+  const normalized = normalizeEarlyLandmarkOrder(order);
+  return normalized[idx] || null;
 }
 
 const STORAGE_KEY = 'travellingKingdom.petState';
@@ -76,13 +135,7 @@ export function metersToNextLevel(level: number): number {
     return fromTable;
   }
   // Fallback if destinations.json failed to load (matches early legs).
-  if (level <= 1) {
-    return 30;
-  }
-  if (level === 2) {
-    return 30;
-  }
-  if (level === 3) {
+  if (level <= 3) {
     return 50;
   }
   return (level - 2) * 500; // 1000, 1500, 2000, ...
@@ -104,6 +157,7 @@ export function createDefaultState(): PetState {
     minimalBg: false,
     awaitingDeparture: false,
     partySize: 1,
+    earlyLandmarkOrder: shuffleEarlyLandmarks(),
   };
 }
 
@@ -162,7 +216,9 @@ export class PetStateStore {
       clampedMeters = needed;
       awaitingDeparture = true;
     }
-    return {
+    const hadLandmarkOrder = isValidEarlyLandmarkOrder(rest.earlyLandmarkOrder);
+    const earlyLandmarkOrder = normalizeEarlyLandmarkOrder(rest.earlyLandmarkOrder);
+    const next: PetState = {
       ...createDefaultState(),
       ...rest,
       level,
@@ -174,7 +230,13 @@ export class PetStateStore {
       minimalBg: rest.minimalBg === true,
       awaitingDeparture,
       partySize: Math.max(1, Math.floor(typeof rest.partySize === 'number' ? rest.partySize : 1)),
+      earlyLandmarkOrder,
     };
+    // Persist a newly assigned shuffle so reload does not reshuffle mid-run.
+    if (!hadLandmarkOrder) {
+      void this.globalState.update(STORAGE_KEY, next);
+    }
+    return next;
   }
 
   async save(state: PetState): Promise<void> {
@@ -204,6 +266,7 @@ export class PetStateStore {
       meters: 0,
       level: 1,
       partySize: 1,
+      earlyLandmarkOrder: shuffleEarlyLandmarks(),
     };
   }
 
