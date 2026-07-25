@@ -260,6 +260,11 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     const willowTreeUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', 'willow_tree.png')
     );
+    const houseUris = [1, 2, 3, 4, 5, 6].map((n) =>
+      webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', `house_${n}.png`)
+      )
+    );
     const destinationsUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'destinations.json')
     );
@@ -301,6 +306,12 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     data-decor="${decorUri}"
     data-apple-tree="${appleTreeUri}"
     data-willow-tree="${willowTreeUri}"
+    data-house-1="${houseUris[0]}"
+    data-house-2="${houseUris[1]}"
+    data-house-3="${houseUris[2]}"
+    data-house-4="${houseUris[3]}"
+    data-house-5="${houseUris[4]}"
+    data-house-6="${houseUris[5]}"
     data-bg1="${bgLayerUris[0]}"
     data-bg2="${bgLayerUris[1]}"
     data-bg3="${bgLayerUris[2]}"
@@ -385,9 +396,20 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas id="camp-decor" class="camp-decor" aria-hidden="true"></canvas>
           <canvas id="camp-npc" class="camp-npc" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-2" class="camp-npc companion-slot" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-3" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-a" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-b" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-c" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-d" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-e" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-f" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-g" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-h" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-i" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
+          <canvas id="town-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <button id="depart-btn" class="depart-btn" type="button" hidden>Continue</button>
           <canvas id="world-decor" class="world-decor" aria-hidden="true"></canvas>
         </div>

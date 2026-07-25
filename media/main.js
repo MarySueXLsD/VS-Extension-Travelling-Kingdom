@@ -17,6 +17,7 @@
   const petSpriteEl = document.getElementById('pet-sprite');
   const campNpcEl = document.getElementById('camp-npc');
   const companion2El = document.getElementById('companion-2');
+  const companion3El = document.getElementById('companion-3');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -95,6 +96,20 @@
   const GROVE_NPC_OX = 0.85;
   const GROVE_NPC_COL = 1; // female sheet column 2 (1-based)
   const GROVE_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
+  /** Whore Town (level 3) landmark — houses and townsfolk along the trail. */
+  const TOWN_DEST_LEVEL = 3;
+  const TOWN_NPC_COL = 3; // female sheet column 4 (1-based)
+  const TOWN_NPC_OX = 0.85;
+  const TOWN_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
+  const HOUSE_DISPLAY_SCALE = 0.5;
+  const TOWN_HOUSES = [
+    { id: 'house-1', file: 'house_1', ox: -7, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-2', file: 'house_2', ox: -4.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-3', file: 'house_3', ox: -2.2, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-4', file: 'house_4', ox: 0, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-5', file: 'house_5', ox: 2.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-6', file: 'house_6', ox: 5.5, scale: HOUSE_DISPLAY_SCALE },
+  ];
   // Fixed offsets preserve the same orchard silhouette after every reload.
   const GROVE_APPLE_OX = [
     -5.5, -5.1, -4.8, -4.4, -4.0, -3.7, -3.3, -2.9, -2.6, -2.2,
@@ -113,11 +128,11 @@
   const CAMP_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
   const CAMP_NPC_FPS = 5;
   /** Lead X inset from the left edge (solo). */
-  const PET_BASE_LEFT = 28;
+  const PET_BASE_LEFT = 32;
   /** Extra lead inset per party member so the trail fits on screen. */
-  const CAMERA_PAD_PER_MEMBER = 36;
+  const CAMERA_PAD_PER_MEMBER = 32;
   /** Companion trails this far behind the leader (px). */
-  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.45);
+  const COMPANION_FOLLOW_GAP = Math.round(SPRITE_DISPLAY * 0.40);
   /** Camera settle speed — lower = slower, smoother ease to lead position. */
   const CAMERA_EASE_RATE = 0.85;
   /** Max camera ease (px/s); keep well below floor scroll so it reads as pan, not slide. */
@@ -156,6 +171,18 @@
       el: null,
     },
   ];
+  const TOWN_EXTRAS = [
+    { id: 'town-a', row: 0, cols: [5, 6, 7, 8, 9], ox: -6.2, size: 88, el: null },
+    { id: 'town-b', row: 1, cols: [5, 6, 7, 8, 9], ox: -5.0, size: 88, el: null },
+    { id: 'town-c', row: 2, cols: [0, 1, 2, 3, 4], ox: -3.7, size: 88, el: null },
+    { id: 'town-d', row: 2, cols: [5, 6, 7, 8, 9], ox: -2.7, size: 88, el: null },
+    { id: 'town-e', row: 3, cols: [0, 1, 2, 3, 4], ox: -1.3, size: 88, el: null },
+    { id: 'town-f', row: 3, cols: [5, 6, 7, 8, 9], ox: 1.4, size: 88, el: null },
+    { id: 'town-g', row: 8, cols: [0, 1, 2, 3, 4], ox: 3.0, size: 88, el: null },
+    { id: 'town-h', row: 9, cols: [0, 1, 2, 3, 4], ox: 4.4, size: 88, el: null },
+    { id: 'town-i', row: 9, cols: [5, 6, 7, 8, 9], ox: 6.2, size: 88, el: null },
+    { id: 'town-dog', row: 7, cols: [5, 6, 7, 8, 9], ox: 5.2, size: 96, mirror: true, el: null },
+  ];
   const COMPANION_SLOTS = [
     {
       id: 'hooded',
@@ -170,6 +197,13 @@
       minParty: 3,
       sheet: 'female',
       col: 1,
+    },
+    {
+      id: 'town',
+      el: companion3El,
+      minParty: 4,
+      sheet: 'female',
+      col: 3,
     },
   ];
 
@@ -240,6 +274,8 @@
   let groveAppleImg = null;
   let groveWillowImg = null;
   let groveFemaleImage = null;
+  let townHouseImgs = [];
+  let townFemaleImage = null;
   let campNpcFrame = 0;
   let campNpcAnimId = null;
   let campNpcLastTs = 0;
@@ -513,6 +549,8 @@
       partySize = Math.max(partySize, 2);
     } else if (state.level === 2) {
       partySize = Math.max(partySize, 3);
+    } else if (state.level === 3) {
+      partySize = Math.max(partySize, 4);
     }
     return {
       ...state,
@@ -529,7 +567,7 @@
   }
 
   function companionCountFromState(state) {
-    return Math.max(1, Math.min(3, Math.floor((state && state.partySize) || 1)));
+    return Math.max(1, Math.min(4, Math.floor((state && state.partySize) || 1)));
   }
 
   function hasActiveCompanionSlots() {
@@ -745,8 +783,12 @@
     return Boolean(state && state.characterId && state.level === GROVE_DEST_LEVEL);
   }
 
+  function shouldShowTown(state) {
+    return Boolean(state && state.characterId && state.level === TOWN_DEST_LEVEL);
+  }
+
   function shouldShowLandmark(state) {
-    return shouldShowCamp(state) || shouldShowGrove(state);
+    return shouldShowCamp(state) || shouldShowGrove(state) || shouldShowTown(state);
   }
 
   function landmarkKindForState(state) {
@@ -755,6 +797,9 @@
     }
     if (shouldShowGrove(state)) {
       return 'grove';
+    }
+    if (shouldShowTown(state)) {
+      return 'town';
     }
     return null;
   }
@@ -771,8 +816,9 @@
   function isCampOffscreen() {
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
-    const leftOffset = landmarkKind === 'grove' ? -5.5 : CAMP_PIECES[0].ox;
-    const rightOffset = 5.5;
+    const leftOffset =
+      landmarkKind === 'town' ? -7.5 : landmarkKind === 'grove' ? -5.5 : CAMP_PIECES[0].ox;
+    const rightOffset = landmarkKind === 'town' ? 7.5 : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -835,6 +881,12 @@
         right: campPotWorldX + 5.5 * u + 8,
       };
     }
+    if (landmarkKind === 'town') {
+      return {
+        left: campPotWorldX - 7.5 * u - 8,
+        right: campPotWorldX + 7.5 * u + 8,
+      };
+    }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
     // Include knights sitting beside both tents.
     const right = campPotWorldX + 5.5 * u + 8;
@@ -883,6 +935,27 @@
     drawTree(groveWillowImg, GROVE_WILLOW_OX);
   }
 
+  function paintTown(ctx, height) {
+    if (!campActive || landmarkKind !== 'town' || townHouseImgs.length !== TOWN_HOUSES.length) {
+      return;
+    }
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    TOWN_HOUSES.forEach((house, index) => {
+      const img = townHouseImgs[index];
+      if (!img) {
+        return;
+      }
+      const drawW = Math.round((img.naturalWidth || img.width) * house.scale);
+      const drawH = Math.round((img.naturalHeight || img.height) * house.scale);
+      const dx = Math.round(campPotWorldX + house.ox * u - decorScroll - drawW / 2);
+      if (dx + drawW < 0 || dx > width) {
+        return;
+      }
+      ctx.drawImage(img, dx, height - drawH, drawW, drawH);
+    });
+  }
+
   function positionCampNpc() {
     if (!campNpcEl || !campActive || landmarkKind !== 'camp' || companionJoined) {
       if (campNpcEl && !companionJoined) {
@@ -924,6 +997,32 @@
     companion2El.style.bottom = '0';
   }
 
+  function shouldShowTownNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'town' &&
+        latestState &&
+        companionCountFromState(latestState) < 4
+    );
+  }
+
+  function positionTownNpc() {
+    if (!companion3El) {
+      return;
+    }
+    if (!shouldShowTownNpc()) {
+      if (!latestState || companionCountFromState(latestState) < 4) {
+        companion3El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + TOWN_NPC_OX * u - decorScroll);
+    companion3El.hidden = false;
+    companion3El.style.left = `${screenX}px`;
+    companion3El.style.bottom = '0';
+  }
+
   function positionCampExtra(extra, frameIndex) {
     const el = extra.el;
     if (!el || !campActive || landmarkKind !== 'camp' || !campChars1Image) {
@@ -952,6 +1051,40 @@
 
   function hideAllCampExtras() {
     CAMP_EXTRAS.forEach((extra) => {
+      if (extra.el) {
+        extra.el.hidden = true;
+      }
+    });
+  }
+
+  function positionTownExtra(extra, frameIndex) {
+    const el = extra.el;
+    if (!el || !campActive || landmarkKind !== 'town' || !campChars1Image) {
+      if (el) {
+        el.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const size = extra.size;
+    const screenX = Math.round(campPotWorldX + extra.ox * u - decorScroll - size / 2);
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    if (screenX + size < 0 || screenX > width) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.style.left = `${screenX}px`;
+    el.style.bottom = '0';
+    drawCampExtraFrame(extra, frameIndex);
+  }
+
+  function positionAllTownExtras(frameIndex) {
+    TOWN_EXTRAS.forEach((extra) => positionTownExtra(extra, frameIndex));
+  }
+
+  function hideAllTownExtras() {
+    TOWN_EXTRAS.forEach((extra) => {
       if (extra.el) {
         extra.el.hidden = true;
       }
@@ -1135,6 +1268,35 @@
     }
   }
 
+  function drawTownNpcFrame(frameIndex) {
+    if (!companion3El || !townFemaleImage || !shouldShowTownNpc()) {
+      return;
+    }
+    const img = townFemaleImage;
+    const cellW = Math.floor(img.naturalWidth / 12);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = TOWN_NPC_ROWS[frameIndex % TOWN_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion3El.width = Math.round(size * dpr);
+    companion3El.height = Math.round(size * dpr);
+    companion3El.style.width = `${size}px`;
+    companion3El.style.height = `${size}px`;
+    const ctx = companion3El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, TOWN_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, TOWN_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex) {
     const el = slot && slot.el;
     const image =
@@ -1246,8 +1408,15 @@
         drawGroveNpcFrame(campNpcFrame);
         positionGroveNpc();
       }
+      if (shouldShowTownNpc()) {
+        drawTownNpcFrame(campNpcFrame);
+        positionTownNpc();
+      }
       if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
+      }
+      if (campActive && landmarkKind === 'town') {
+        positionAllTownExtras(campNpcFrame);
       }
       campNpcAnimId = requestAnimationFrame(tick);
     };
@@ -1260,6 +1429,9 @@
     CAMP_EXTRAS[0].el = campDogEl;
     CAMP_EXTRAS[1].el = campKnightSitEl;
     CAMP_EXTRAS[2].el = campKnightLuteEl;
+    TOWN_EXTRAS.forEach((extra) => {
+      extra.el = document.getElementById(extra.id);
+    });
     if (maleSrc) {
       campNpcImage = await loadImage(maleSrc);
     }
@@ -1275,6 +1447,7 @@
     if (campActive) {
       startCampNpcAnim();
       positionAllCampExtras(campNpcFrame);
+      positionAllTownExtras(campNpcFrame);
     }
   }
 
@@ -1290,6 +1463,26 @@
     }
     if (femaleSrc) {
       groveFemaleImage = await loadImage(femaleSrc);
+    }
+    if (campActive) {
+      startCampNpcAnim();
+      paintDecor();
+    }
+  }
+
+  async function prepareTownArt() {
+    const femaleSrc = appEl.getAttribute('data-female-sheet') || appEl.dataset.femaleSheet;
+    townHouseImgs = await Promise.all(
+      TOWN_HOUSES.map((house) => {
+        const src = appEl.getAttribute(`data-${house.id}`) || appEl.dataset[house.id];
+        if (!src) {
+          throw new Error(`Missing data-${house.id}`);
+        }
+        return loadImage(src);
+      })
+    );
+    if (femaleSrc) {
+      townFemaleImage = await loadImage(femaleSrc);
     }
     if (campActive) {
       startCampNpcAnim();
@@ -1322,11 +1515,15 @@
     campWorldLocked = false;
     stopCampNpcAnim();
     hideAllCampExtras();
+    hideAllTownExtras();
     if (campNpcEl && !companionJoined) {
       campNpcEl.hidden = true;
     }
     if (companion2El && (!latestState || companionCountFromState(latestState) < 3)) {
       companion2El.hidden = true;
+    }
+    if (companion3El && (!latestState || companionCountFromState(latestState) < 4)) {
+      companion3El.hidden = true;
     }
     if (departBtnEl) {
       departBtnEl.hidden = true;
@@ -1371,7 +1568,12 @@
 
   function getRecruitScreenLeft() {
     const u = campUnit();
-    const npcOffset = landmarkKind === 'grove' ? GROVE_NPC_OX : 0.85;
+    const npcOffset =
+      landmarkKind === 'grove'
+        ? GROVE_NPC_OX
+        : landmarkKind === 'town'
+          ? TOWN_NPC_OX
+          : 0.85;
     return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
@@ -1387,6 +1589,8 @@
   function positionRecruitNpc() {
     if (landmarkKind === 'grove') {
       positionGroveNpc();
+    } else if (landmarkKind === 'town') {
+      positionTownNpc();
     } else {
       positionCampNpc();
     }
@@ -1395,6 +1599,8 @@
   function drawRecruitNpcFrame(frameIndex) {
     if (landmarkKind === 'grove') {
       drawGroveNpcFrame(frameIndex);
+    } else if (landmarkKind === 'town') {
+      drawTownNpcFrame(frameIndex);
     } else {
       drawCampNpcFrame(frameIndex);
     }
@@ -1702,6 +1908,7 @@
     paintCampLayer(width, height, dpr);
     positionCampNpc();
     positionGroveNpc();
+    positionTownNpc();
     positionDepartButton();
   }
 
@@ -1720,6 +1927,7 @@
     if (campActive) {
       paintCamp(ctx, height);
       paintGrove(ctx, height);
+      paintTown(ctx, height);
     }
   }
 
@@ -3297,6 +3505,10 @@
 
   prepareGroveArt().catch((error) => {
     console.error('[travelling-kingdom] grove art prep failed', error);
+  });
+
+  prepareTownArt().catch((error) => {
+    console.error('[travelling-kingdom] town art prep failed', error);
   });
 
   prepareParallax().catch((error) => {

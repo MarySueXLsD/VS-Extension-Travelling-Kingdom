@@ -244,6 +244,8 @@ export class PetStateStore {
       partySize = Math.max(partySize, 2);
     } else if (level === 2) {
       partySize = Math.max(partySize, 3);
+    } else if (level === 3) {
+      partySize = Math.max(partySize, 4);
     }
     const next: PetState = {
       ...current,

@@ -642,7 +642,7 @@ input {
   margin: 0;
   /* Pin to the left on the grass line (does not recenter on resize). */
   position: absolute;
-  left: 28px;
+  left: 32px;
   right: auto;
   bottom: 0;
   width: max-content;
@@ -670,6 +670,10 @@ input {
 
 .companion-slot {
   z-index: 3;
+}
+
+.companion-slot-far {
+  z-index: 2;
 }
 
 .depart-btn {
