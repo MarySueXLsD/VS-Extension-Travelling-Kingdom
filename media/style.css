@@ -665,6 +665,11 @@ input {
 .camp-npc {
   width: 96px;
   height: 96px;
+  z-index: 4;
+}
+
+.companion-slot {
+  z-index: 3;
 }
 
 .depart-btn {

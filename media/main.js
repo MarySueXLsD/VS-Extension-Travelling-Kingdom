@@ -532,8 +532,9 @@
     return Math.max(1, Math.min(3, Math.floor((state && state.partySize) || 1)));
   }
 
-  function hasCompanions() {
-    return companionCountFromState(latestState) >= 2;
+  function hasActiveCompanionSlots() {
+    const partySize = companionCountFromState(latestState);
+    return COMPANION_SLOTS.some((slot) => partySize >= slot.minParty);
   }
 
   function syncCompanionFromState(state) {
@@ -582,7 +583,7 @@
     }
     let lastTs = 0;
     const tick = (timestamp) => {
-      if (recruitBusy) {
+      if (recruitBusy && !hasActiveCompanionSlots()) {
         cameraAnimId = null;
         return;
       }
@@ -591,7 +592,7 @@
         const diff = petLeadLeftTarget - petLeadLeft;
         if (Math.abs(diff) < 0.5) {
           applyPetLeft(petLeadLeftTarget);
-          if (companionJoined) {
+          if (hasActiveCompanionSlots()) {
             positionCompanionsBehindPet();
           }
           cameraAnimId = null;
@@ -612,7 +613,7 @@
           Math.sign(diff) * Math.min(Math.abs(diff), CAMERA_EASE_MAX_SPEED * dt);
         const step = Math.abs(eased) < Math.abs(capped) ? eased : capped;
         applyPetLeft(petLeadLeft + step);
-        if (companionJoined) {
+        if (hasActiveCompanionSlots()) {
           positionCompanionsBehindPet();
         }
       }
@@ -2927,7 +2928,7 @@
       walkFrame = 0;
       activeWalkCharacterId = characterId;
       drawWalkFrame(character, walkFrame);
-      if (companionJoined) {
+      if (hasActiveCompanionSlots()) {
         drawActiveCompanionWalkFrames(walkFrame);
         positionCompanionsBehindPet();
       }
@@ -2964,7 +2965,7 @@
       }
 
       drawWalkFrame(active, walkFrame);
-      if (companionJoined) {
+      if (hasActiveCompanionSlots()) {
         drawActiveCompanionWalkFrames(walkFrame);
         positionCompanionsBehindPet();
       }
