@@ -443,7 +443,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
             <section id="panel-settings" class="panel" data-screen="settings">
               <h2>Settings</h2>
               <p class="status">Manage your journey.</p>
-              <p class="status" id="extension-version">Travelling Kingdom v${extensionVersion}</p>
+              <p class="status" id="extension-version">Version: ${extensionVersion}</p>
               <label class="settings-toggle" for="clouds-enabled">
                 <input id="clouds-enabled" type="checkbox" />
                 <span>Enable clouds (beta)</span>

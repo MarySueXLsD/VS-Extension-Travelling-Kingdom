@@ -91,7 +91,7 @@
   const CAMP_DEST_LEVEL = 1;
   /** Apple Grove (level 2) landmark — orchard art is bottom-aligned to the trail. */
   const GROVE_DEST_LEVEL = 2;
-  const GROVE_WILLOW_OX = 0.2;
+  const GROVE_WILLOW_OX = 0.35;
   const GROVE_WILLOW_SCALE = 1.05;
   const GROVE_NPC_OX = 0.85;
   const GROVE_NPC_COL = 1; // female sheet column 2 (1-based)
@@ -101,27 +101,26 @@
   const TOWN_NPC_COL = 3; // female sheet column 4 (1-based)
   const TOWN_NPC_OX = 0.85;
   const TOWN_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
-  const HOUSE_DISPLAY_SCALE = 1.0;
+  const HOUSE_DISPLAY_SCALE = 1.25;
   const TOWN_HOUSES = [
-    { id: 'house-1', file: 'house_1', ox: -10.5, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-2', file: 'house_2', ox: -6.5, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-3', file: 'house_3', ox: -3.2, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-1', file: 'house_1', ox: -12.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-2', file: 'house_2', ox: -7.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-3', file: 'house_3', ox: -3.8, scale: HOUSE_DISPLAY_SCALE },
     { id: 'house-4', file: 'house_4', ox: 0, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-5', file: 'house_5', ox: 3.5, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-6', file: 'house_6', ox: 7.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-5', file: 'house_5', ox: 4.2, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-6', file: 'house_6', ox: 9.0, scale: HOUSE_DISPLAY_SCALE },
   ];
   // Sparse orchard: fewer trees, wider gaps, mixed sizes.
   const GROVE_APPLES = [
-    { ox: -5.4, scale: 0.78 },
-    { ox: -4.1, scale: 1.18 },
-    { ox: -2.7, scale: 0.92 },
-    { ox: -1.5, scale: 1.08 },
-    { ox: -0.35, scale: 0.72 },
-    { ox: 1.1, scale: 1.22 },
-    { ox: 2.4, scale: 0.88 },
-    { ox: 3.6, scale: 1.05 },
-    { ox: 4.7, scale: 0.8 },
-    { ox: 5.6, scale: 1.12 },
+    { ox: -7.2, scale: 0.78 },
+    { ox: -5.2, scale: 1.18 },
+    { ox: -3.3, scale: 0.92 },
+    { ox: -1.4, scale: 1.08 },
+    { ox: 0.6, scale: 0.72 },
+    { ox: 2.5, scale: 1.22 },
+    { ox: 4.4, scale: 0.88 },
+    { ox: 6.2, scale: 1.05 },
+    { ox: 7.8, scale: 0.8 },
   ];
   const CAMP_PIECES = [
     { id: 'leftTent', row: 1, col: 0, w: 3, h: 2, ox: -3, oy: 0 },
@@ -896,8 +895,8 @@
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
     const leftOffset =
-      landmarkKind === 'town' ? -11.5 : landmarkKind === 'grove' ? -5.8 : CAMP_PIECES[0].ox;
-    const rightOffset = landmarkKind === 'town' ? 11.5 : landmarkKind === 'grove' ? 5.8 : 5.5;
+      landmarkKind === 'town' ? -13.5 : landmarkKind === 'grove' ? -8.0 : CAMP_PIECES[0].ox;
+    const rightOffset = landmarkKind === 'town' ? 13.5 : landmarkKind === 'grove' ? 8.0 : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -968,14 +967,14 @@
     const u = campUnit();
     if (landmarkKind === 'grove') {
       return {
-        left: campPotWorldX - 5.8 * u - 8,
-        right: campPotWorldX + 5.8 * u + 8,
+        left: campPotWorldX - 8.0 * u - 8,
+        right: campPotWorldX + 8.0 * u + 8,
       };
     }
     if (landmarkKind === 'town') {
       return {
-        left: campPotWorldX - 11.5 * u - 8,
-        right: campPotWorldX + 11.5 * u + 8,
+        left: campPotWorldX - 13.5 * u - 8,
+        right: campPotWorldX + 13.5 * u + 8,
       };
     }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;

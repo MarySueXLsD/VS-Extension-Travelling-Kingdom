@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.48.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.49.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -54,7 +54,8 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.45 | `travelling-kingdom-0.0.45.vsix` | — | — | Interim packaging (pre-shuffle) |
 | 0.0.46 | `travelling-kingdom-0.0.46.vsix` | 1.08 MB | 61 | Shuffle camp/grove/town; each early leg 50 m |
 | 0.0.47 | `travelling-kingdom-0.0.47.vsix` | 1.08 MB | 61 | Cache-bust destinations.json; show version in Settings |
-| 0.0.48 | `travelling-kingdom-0.0.48.vsix` | 1.08 MB | 61 | Current: sparse grove, correct recruit looks, linger landmark, 2× town houses |
+| 0.0.48 | `travelling-kingdom-0.0.48.vsix` | 1.08 MB | 61 | Sparse grove, correct recruit looks, linger landmark, 2× town houses |
+| 0.0.49 | `travelling-kingdom-0.0.49.vsix` | 1.08 MB | 61 | Current: Settings version label (compiled), larger houses, wider tree gaps |
 
 ---
 
@@ -401,6 +402,11 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 - Recruits keep their landmark look (grove/town no longer snap to hooded traveler); companions keyed by recruited landmark order.
 - After Continue / recruit, the current location lingers and scrolls away instead of vanishing.
 - Whore Town houses drawn at **2×** previous scale (wider spacing).
+
+## 0.0.49 — Settings version + spacing tweaks
+
+- Settings shows **Version: x.y.z** (ensured via compile into packaged `dist`).
+- Town houses scaled to **1.25×**; apple trees spaced farther apart.
 
 ---
 
