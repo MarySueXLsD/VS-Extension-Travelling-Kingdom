@@ -341,7 +341,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
             <canvas id="xp-bar" class="xp-bar-canvas" width="94" height="16"></canvas>
           </div>
           <div class="xp-meta">
-            <div id="xp-label" class="xp-label">Traveled 0/100 meters</div>
+            <div id="xp-label" class="xp-label">Traveled 0/30 meters</div>
             <div id="destination-label" class="destination-label">Destination: Meadow Village</div>
           </div>
         </div>

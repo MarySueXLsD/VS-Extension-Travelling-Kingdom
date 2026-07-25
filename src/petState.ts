@@ -75,8 +75,15 @@ export function metersToNextLevel(level: number): number {
   if (typeof fromTable === 'number' && fromTable > 0) {
     return fromTable;
   }
-  if (level <= 3) {
-    return 100 + (level - 1) * 200; // 100, 300, 500
+  // Fallback if destinations.json failed to load (matches early legs).
+  if (level <= 1) {
+    return 30;
+  }
+  if (level === 2) {
+    return 30;
+  }
+  if (level === 3) {
+    return 50;
   }
   return (level - 2) * 500; // 1000, 1500, 2000, ...
 }

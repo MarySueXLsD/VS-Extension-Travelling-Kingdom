@@ -357,14 +357,22 @@
   charConfirmEl.disabled = true;
 
   function metersToNext(level) {
-    const exact = destinations.find((d) => d.level === level);
+    const lvl = Math.max(1, Math.floor(Number(level) || 1));
+    const exact = destinations.find((d) => Number(d.level) === lvl);
     if (exact && typeof exact.meters === 'number' && exact.meters > 0) {
       return Math.floor(exact.meters);
     }
-    if (level <= 3) {
-      return 100 + (level - 1) * 200;
+    // Fallback if destinations.json is not loaded yet (matches destinations.json early legs).
+    if (lvl <= 1) {
+      return 30;
     }
-    return (level - 2) * 500;
+    if (lvl === 2) {
+      return 30;
+    }
+    if (lvl === 3) {
+      return 50;
+    }
+    return (lvl - 2) * 500;
   }
 
   function applyTravelLocal(state, gain) {
