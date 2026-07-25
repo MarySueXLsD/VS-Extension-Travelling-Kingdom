@@ -48,7 +48,7 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.34–0.0.39 | `tamagotchi-0.0.*.vsix` | — | — | Pre-rebrand builds (camp, party, recruit cutscene) |
 | 0.0.40 | `travelling-kingdom-0.0.40.vsix` | ~979 KB | 57 | Rebrand to Travelling Kingdom; publisher MarySue |
 | 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Lead inset + party camera room |
-| 0.0.42 | `travelling-kingdom-0.0.42.vsix` | — | — | Apple Grove landmark; party of 3; dual companion trail + camera |
+| 0.0.42 | `travelling-kingdom-0.0.42.vsix` | 1.08 MB | 61 | Apple Grove landmark; party of 3; dual companion trail + camera |
 
 ---
 
