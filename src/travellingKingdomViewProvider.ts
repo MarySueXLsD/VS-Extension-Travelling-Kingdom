@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { CharacterId, DistanceUnit, PetAction, PetStateStore, ScreenId } from './petState';
 
@@ -265,9 +267,19 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
         vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', `house_${n}.png`)
       )
     );
-    const destinationsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'destinations.json')
-    );
+    const destinationsUri = webview
+      .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'destinations.json'))
+      .with({ query: assetQuery });
+    let extensionVersion = 'unknown';
+    try {
+      const pkgPath = path.join(this.extensionUri.fsPath, 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { version?: string };
+      if (typeof pkg.version === 'string' && pkg.version.trim()) {
+        extensionVersion = pkg.version.trim();
+      }
+    } catch {
+      // Keep placeholder version if package.json is missing.
+    }
     const bgLayerUris = [1, 2, 3, 4, 5, 6].map((n) => {
       // Layer 1 uses a distinct filename so webviews cannot keep a cached original.
       const fileName = n === 1 ? 'background_layer_1b.png' : `background_layer_${n}.png`;
@@ -431,6 +443,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
             <section id="panel-settings" class="panel" data-screen="settings">
               <h2>Settings</h2>
               <p class="status">Manage your journey.</p>
+              <p class="status" id="extension-version">Travelling Kingdom v${extensionVersion}</p>
               <label class="settings-toggle" for="clouds-enabled">
                 <input id="clouds-enabled" type="checkbox" />
                 <span>Enable clouds (beta)</span>

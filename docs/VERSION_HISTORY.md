@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.46.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.47.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -52,7 +52,8 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.43 | `travelling-kingdom-0.0.43.vsix` | 1.08 MB | 61 | Whore Town landmark; party of 4; third companion trail |
 | 0.0.44 | `travelling-kingdom-0.0.44.vsix` | — | — | Legs 30/30/50; clear landmark after Continue so camp does not stick |
 | 0.0.45 | `travelling-kingdom-0.0.45.vsix` | — | — | Interim packaging (pre-shuffle) |
-| 0.0.46 | `travelling-kingdom-0.0.46.vsix` | 1.08 MB | 61 | Current: shuffle camp/grove/town; each early leg 50 m |
+| 0.0.46 | `travelling-kingdom-0.0.46.vsix` | 1.08 MB | 61 | Shuffle camp/grove/town; each early leg 50 m |
+| 0.0.47 | `travelling-kingdom-0.0.47.vsix` | 1.08 MB | 61 | Current: cache-bust destinations.json; show version in Settings |
 
 ---
 
@@ -387,6 +388,11 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 - First three destination legs are each **50** meters (`destinations.json` levels 1–3).
 - Per new run / character choose, `earlyLandmarkOrder` shuffles **Soldier Camp**, **Apple Grove**, and **Whore Town** so which landmark appears at levels 1–3 varies; party-size bumps still follow depart level (1→2, 2→3, 3→4).
 - Destination labels and landmark spawn use the shuffled kind, not fixed level→name mapping.
+
+## 0.0.47 — Version label + destinations cache bust
+
+- Settings shows **Travelling Kingdom v…** so the running install is obvious.
+- `destinations.json` webview URI is cache-busted like other assets (avoids stale River Town / 100/300/500 tables).
 
 ---
 
