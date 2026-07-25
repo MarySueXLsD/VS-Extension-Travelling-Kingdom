@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.44.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.46.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -50,7 +50,9 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Lead inset + party camera room |
 | 0.0.42 | `travelling-kingdom-0.0.42.vsix` | 1.08 MB | 61 | Apple Grove landmark; party of 3; dual companion trail + camera |
 | 0.0.43 | `travelling-kingdom-0.0.43.vsix` | 1.08 MB | 61 | Whore Town landmark; party of 4; third companion trail |
-| 0.0.44 | `travelling-kingdom-0.0.44.vsix` | — | — | Current: legs 30/30/50; clear landmark after Continue so camp does not stick |
+| 0.0.44 | `travelling-kingdom-0.0.44.vsix` | — | — | Legs 30/30/50; clear landmark after Continue so camp does not stick |
+| 0.0.45 | `travelling-kingdom-0.0.45.vsix` | — | — | Interim packaging (pre-shuffle) |
+| 0.0.46 | `travelling-kingdom-0.0.46.vsix` | 1.08 MB | 61 | Current: shuffle camp/grove/town; each early leg 50 m |
 
 ---
 
@@ -343,6 +345,7 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 | 0.0.40 → 0.0.41 | — | Lead inset `PET_BASE_LEFT` 36 + party pad 44 so solo/party/cutscene fit farther from the left edge |
 | 0.0.41 → 0.0.42 | `apple_tree.png`, `willow_tree.png` | Apple Grove destination; `#companion-2`; grove landmark + recruit cutscene; party of 3 trail/camera (`PET_BASE_LEFT` 28, `CAMERA_PAD_PER_MEMBER` 36) |
 | 0.0.42 → 0.0.43 | `house_1.png`–`house_6.png` | Whore Town destination; `#companion-3`; six-house town landmark + recruit cutscene; party of 4 trail/camera (`PET_BASE_LEFT` 32, `CAMERA_PAD_PER_MEMBER` 32) |
+| 0.0.43 → 0.0.46 | — | Early landmark order shuffled per save; levels 1–3 each **50** m; destination labels follow shuffled kind |
 
 ---
 
@@ -378,6 +381,12 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 
 - Destination meters: Soldier Camp **30**, Apple Grove **30**, Whore Town **50**.
 - After Continue / recruit finish, the previous landmark is cleared so Soldier Camp (and its hooded idle) no longer stays locked under the party for the whole next leg; the next landmark spawns ahead by remaining meters.
+
+## 0.0.46 — Randomized early recruits at 50 m
+
+- First three destination legs are each **50** meters (`destinations.json` levels 1–3).
+- Per new run / character choose, `earlyLandmarkOrder` shuffles **Soldier Camp**, **Apple Grove**, and **Whore Town** so which landmark appears at levels 1–3 varies; party-size bumps still follow depart level (1→2, 2→3, 3→4).
+- Destination labels and landmark spawn use the shuffled kind, not fixed level→name mapping.
 
 ---
 
