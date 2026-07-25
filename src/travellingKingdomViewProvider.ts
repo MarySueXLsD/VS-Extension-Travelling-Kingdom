@@ -273,6 +273,16 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
         vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', `house_${n}.png`)
       )
     );
+    const stallUris = [1, 2, 3].map((n) =>
+      webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', `market_stall_${n}.png`)
+      )
+    );
+    const tavernUris = [1, 2].map((n) =>
+      webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'environment', `tavern_${n}.png`)
+      )
+    );
     const destinationsUri = webview
       .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'static', 'world', 'destinations.json'))
       .with({ query: assetQuery });
@@ -332,6 +342,11 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
     data-house-4="${houseUris[3]}"
     data-house-5="${houseUris[4]}"
     data-house-6="${houseUris[5]}"
+    data-stall-1="${stallUris[0]}"
+    data-stall-2="${stallUris[1]}"
+    data-stall-3="${stallUris[2]}"
+    data-tavern-1="${tavernUris[0]}"
+    data-tavern-2="${tavernUris[1]}"
     data-bg1="${bgLayerUris[0]}"
     data-bg2="${bgLayerUris[1]}"
     data-bg3="${bgLayerUris[2]}"
@@ -419,6 +434,8 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas id="companion-3" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-4" class="companion-slot companion-slot-right" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-5" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-6" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-7" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>

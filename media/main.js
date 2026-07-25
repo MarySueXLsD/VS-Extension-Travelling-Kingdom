@@ -20,6 +20,8 @@
   const companion3El = document.getElementById('companion-3');
   const companion4El = document.getElementById('companion-4');
   const companion5El = document.getElementById('companion-5');
+  const companion6El = document.getElementById('companion-6');
+  const companion7El = document.getElementById('companion-7');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -119,6 +121,45 @@
   // decor.png 0-based: medium green rock cluster beside the traveler.
   const STONE_DECOR = { row: 5, col: 0, w: 1, h: 1, ox: -0.55 };
   const HOUSE_DISPLAY_SCALE = 1.25;
+  const VILLAGE_BUILDING_SCALE = 1.15;
+  const VILLAGE_STALL_SCALE = 1.0;
+  const VILLAGE_TAVERN_SCALE = 1.2;
+  /** Market Village (level 6) — wide street; bishop by tavern. */
+  const MARKET_DEST_LEVEL = 6;
+  const BISHOP_NPC_OX = 0.15;
+  const BISHOP_NPC_COL = 4; // male sheet column 5 (1-based)
+  const BISHOP_NPC_ROWS = [1, 2, 3, 4, 5];
+  const MARKET_BUILDINGS = [
+    { key: 'house-1', ox: -17.5, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'stall-1', ox: -13.5, scale: VILLAGE_STALL_SCALE },
+    { key: 'house-2', ox: -10.0, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'stall-2', ox: -6.2, scale: VILLAGE_STALL_SCALE },
+    { key: 'house-3', ox: -3.0, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'tavern-1', ox: 1.0, scale: VILLAGE_TAVERN_SCALE },
+    { key: 'stall-3', ox: 5.2, scale: VILLAGE_STALL_SCALE },
+    { key: 'house-4', ox: 8.8, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'tavern-2', ox: 13.0, scale: VILLAGE_TAVERN_SCALE },
+    { key: 'house-5', ox: 17.0, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'house-6', ox: 20.5, scale: VILLAGE_BUILDING_SCALE },
+  ];
+  /** Cloister Village (level 7) — same kit, different layout; nun by tavern. */
+  const CLOISTER_DEST_LEVEL = 7;
+  const NUN_NPC_OX = 0.4;
+  const NUN_NPC_COL = 2; // female sheet column 3 (1-based)
+  const NUN_NPC_ROWS = [1, 2, 3, 4, 5];
+  const CLOISTER_BUILDINGS = [
+    { key: 'tavern-2', ox: -18.5, scale: VILLAGE_TAVERN_SCALE },
+    { key: 'house-6', ox: -14.0, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'stall-3', ox: -10.2, scale: VILLAGE_STALL_SCALE },
+    { key: 'house-1', ox: -6.5, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'stall-1', ox: -3.0, scale: VILLAGE_STALL_SCALE },
+    { key: 'tavern-1', ox: 1.2, scale: VILLAGE_TAVERN_SCALE },
+    { key: 'house-3', ox: 5.5, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'stall-2', ox: 9.0, scale: VILLAGE_STALL_SCALE },
+    { key: 'house-5', ox: 12.8, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'house-2', ox: 16.5, scale: VILLAGE_BUILDING_SCALE },
+    { key: 'house-4', ox: 20.2, scale: VILLAGE_BUILDING_SCALE },
+  ];
   const TOWN_HOUSES = [
     { id: 'house-1', file: 'house_1', ox: -12.5, scale: HOUSE_DISPLAY_SCALE },
     { id: 'house-2', file: 'house_2', ox: -7.5, scale: HOUSE_DISPLAY_SCALE },
@@ -206,6 +247,32 @@
     { id: 'town-i', row: 9, cols: [5, 6, 7, 8, 9], ox: 6.2, size: 88, el: null },
     { id: 'town-dog', row: 7, cols: [5, 6, 7, 8, 9], ox: 5.2, size: 96, mirror: true, el: null },
   ];
+  // Market village crowd — reuse town-* canvases with wider spacing.
+  const MARKET_EXTRAS = [
+    { id: 'town-a', row: 0, cols: [0, 1, 2, 3, 4], ox: -16.0, size: 88, el: null },
+    { id: 'town-b', row: 0, cols: [5, 6, 7, 8, 9], ox: -12.5, size: 88, el: null },
+    { id: 'town-c', row: 1, cols: [0, 1, 2, 3, 4], ox: -9.0, size: 88, el: null },
+    { id: 'town-d', row: 1, cols: [5, 6, 7, 8, 9], ox: -5.5, size: 88, el: null },
+    { id: 'town-e', row: 2, cols: [0, 1, 2, 3, 4], ox: -2.0, size: 88, el: null },
+    { id: 'town-f', row: 2, cols: [5, 6, 7, 8, 9], ox: 3.5, size: 88, el: null },
+    { id: 'town-g', row: 3, cols: [0, 1, 2, 3, 4], ox: 7.0, size: 88, el: null },
+    { id: 'town-h', row: 8, cols: [0, 1, 2, 3, 4], ox: 11.0, size: 88, el: null },
+    { id: 'town-i', row: 9, cols: [5, 6, 7, 8, 9], ox: 15.5, size: 88, el: null },
+    { id: 'town-dog', row: 7, cols: [0, 1, 2, 3, 4], ox: 18.5, size: 96, el: null },
+  ];
+  // Cloister village crowd — different rows/poses, mirrored layout bias.
+  const CLOISTER_EXTRAS = [
+    { id: 'town-a', row: 3, cols: [5, 6, 7, 8, 9], ox: -17.0, size: 88, el: null },
+    { id: 'town-b', row: 8, cols: [5, 6, 7, 8, 9], ox: -13.0, size: 88, el: null },
+    { id: 'town-c', row: 9, cols: [0, 1, 2, 3, 4], ox: -9.5, size: 88, el: null },
+    { id: 'town-d', row: 0, cols: [5, 6, 7, 8, 9], ox: -5.0, size: 88, el: null },
+    { id: 'town-e', row: 1, cols: [0, 1, 2, 3, 4], ox: -1.5, size: 88, el: null },
+    { id: 'town-f', row: 1, cols: [5, 6, 7, 8, 9], ox: 4.0, size: 88, el: null },
+    { id: 'town-g', row: 2, cols: [0, 1, 2, 3, 4], ox: 8.0, size: 88, el: null },
+    { id: 'town-h', row: 2, cols: [5, 6, 7, 8, 9], ox: 12.5, size: 88, el: null },
+    { id: 'town-i', row: 3, cols: [0, 1, 2, 3, 4], ox: 16.5, size: 88, el: null },
+    { id: 'town-dog', row: 7, cols: [5, 6, 7, 8, 9], ox: -7.5, size: 96, mirror: true, el: null },
+  ];
   /** Companion look is keyed by which landmark recruited them (not party index). */
   const COMPANION_BY_KIND = {
     tent: {
@@ -246,6 +313,22 @@
       el: companion5El,
       sheet: 'female',
       col: STONE_NPC_COL,
+      side: 'left',
+    },
+    market: {
+      id: 'bishop',
+      kind: 'market',
+      el: companion6El,
+      sheet: 'male',
+      col: BISHOP_NPC_COL,
+      side: 'left',
+    },
+    cloister: {
+      id: 'nun',
+      kind: 'cloister',
+      el: companion7El,
+      sheet: 'female',
+      col: NUN_NPC_COL,
       side: 'left',
     },
   };
@@ -323,6 +406,8 @@
   let townFemaleImage = null;
   let tentSmallImg = null;
   let tentLargeImg = null;
+  /** Shared village art: house-*, stall-*, tavern-*. */
+  let villageArtImgs = {};
   let campNpcFrame = 0;
   let campNpcAnimId = null;
   let campNpcLastTs = 0;
@@ -423,6 +508,8 @@
     town: 'Whore Town',
     tent: 'Scout Camp',
     stone: 'Wayside Stone',
+    market: 'Market Village',
+    cloister: 'Cloister Village',
   };
 
   function shuffleEarlyLandmarks() {
@@ -459,6 +546,12 @@
     }
     if (lvl === 5) {
       return 'stone';
+    }
+    if (lvl === 6) {
+      return 'market';
+    }
+    if (lvl === 7) {
+      return 'cloister';
     }
     const idx = lvl - 1;
     if (idx < 0 || idx > 2) {
@@ -498,7 +591,7 @@
 
   function destinationNameForLevel(level) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    if (latestState && lvl >= 1 && lvl <= 5) {
+    if (latestState && lvl >= 1 && lvl <= 7) {
       const kind = landmarkKindAtLevel(latestState, lvl);
       if (kind && EARLY_LANDMARK_NAMES[kind]) {
         return EARLY_LANDMARK_NAMES[kind];
@@ -668,6 +761,10 @@
       partySize = Math.max(partySize, 5);
     } else if (state.level === 5) {
       partySize = Math.max(partySize, 6);
+    } else if (state.level === 6) {
+      partySize = Math.max(partySize, 7);
+    } else if (state.level === 7) {
+      partySize = Math.max(partySize, 8);
     }
     return {
       ...state,
@@ -684,25 +781,32 @@
   }
 
   function companionCountFromState(state) {
-    return Math.max(1, Math.min(6, Math.floor((state && state.partySize) || 1)));
+    return Math.max(1, Math.min(8, Math.floor((state && state.partySize) || 1)));
   }
 
-  /** Tent guard leads on the right; early recruits trail left; wayside traveler is last. */
+  /** Tent on the right; early + stone + bishop + nun trail left (nun last). */
   function recruitedLandmarkKinds(state) {
     const order = earlyLandmarkOrderFromState(state);
     const party = companionCountFromState(state);
     const hasTent = party >= 5;
     const hasStone = party >= 6;
-    const earlyCount = Math.min(
-      3,
-      Math.max(0, party - 1 - (hasTent ? 1 : 0) - (hasStone ? 1 : 0))
-    );
+    const hasBishop = party >= 7;
+    const hasNun = party >= 8;
+    const reserved =
+      (hasTent ? 1 : 0) + (hasStone ? 1 : 0) + (hasBishop ? 1 : 0) + (hasNun ? 1 : 0);
+    const earlyCount = Math.min(3, Math.max(0, party - 1 - reserved));
     const kinds = order.slice(0, earlyCount);
     if (hasTent) {
       kinds.unshift('tent');
     }
     if (hasStone) {
       kinds.push('stone');
+    }
+    if (hasBishop) {
+      kinds.push('market');
+    }
+    if (hasNun) {
+      kinds.push('cloister');
     }
     return kinds;
   }
@@ -946,13 +1050,25 @@
     return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'stone');
   }
 
+  function shouldShowMarket(state) {
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'market');
+  }
+
+  function shouldShowCloister(state) {
+    return Boolean(
+      state && state.characterId && landmarkKindAtLevel(state, state.level) === 'cloister'
+    );
+  }
+
   function shouldShowLandmark(state) {
     return (
       shouldShowCamp(state) ||
       shouldShowGrove(state) ||
       shouldShowTown(state) ||
       shouldShowTent(state) ||
-      shouldShowStone(state)
+      shouldShowStone(state) ||
+      shouldShowMarket(state) ||
+      shouldShowCloister(state)
     );
   }
 
@@ -982,9 +1098,11 @@
           ? -8.0
           : landmarkKind === 'tent'
             ? -4.0
-            : landmarkKind === 'stone'
+          : landmarkKind === 'stone'
               ? -1.5
-              : CAMP_PIECES[0].ox;
+              : landmarkKind === 'market' || landmarkKind === 'cloister'
+                ? -21.0
+                : CAMP_PIECES[0].ox;
     const rightOffset =
       landmarkKind === 'town'
         ? 13.5
@@ -994,7 +1112,9 @@
             ? 4.0
             : landmarkKind === 'stone'
               ? 1.5
-              : 5.5;
+              : landmarkKind === 'market' || landmarkKind === 'cloister'
+                ? 21.0
+                : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -1085,6 +1205,12 @@
       return {
         left: campPotWorldX - 1.5 * u - 8,
         right: campPotWorldX + 1.5 * u + 8,
+      };
+    }
+    if (landmarkKind === 'market' || landmarkKind === 'cloister') {
+      return {
+        left: campPotWorldX - 21.0 * u - 8,
+        right: campPotWorldX + 21.0 * u + 8,
       };
     }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
@@ -1204,6 +1330,41 @@
       sizeW,
       sizeH
     );
+  }
+
+  function paintVillageLayout(ctx, height, buildings) {
+    if (!campActive || !buildings || !buildings.length) {
+      return;
+    }
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    buildings.forEach((b) => {
+      const img = villageArtImgs[b.key];
+      if (!img) {
+        return;
+      }
+      const drawW = Math.round((img.naturalWidth || img.width) * b.scale);
+      const drawH = Math.round((img.naturalHeight || img.height) * b.scale);
+      const dx = Math.round(campPotWorldX + b.ox * u - decorScroll - drawW / 2);
+      if (dx + drawW < 0 || dx > width) {
+        return;
+      }
+      ctx.drawImage(img, dx, height - drawH, drawW, drawH);
+    });
+  }
+
+  function paintMarketVillage(ctx, height) {
+    if (landmarkKind !== 'market') {
+      return;
+    }
+    paintVillageLayout(ctx, height, MARKET_BUILDINGS);
+  }
+
+  function paintCloisterVillage(ctx, height) {
+    if (landmarkKind !== 'cloister') {
+      return;
+    }
+    paintVillageLayout(ctx, height, CLOISTER_BUILDINGS);
   }
 
   function positionCampNpc() {
@@ -1333,6 +1494,58 @@
     companion5El.style.bottom = '0';
   }
 
+  function shouldShowBishopNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'market' &&
+        latestState &&
+        !hasRecruitedKind(latestState, 'market')
+    );
+  }
+
+  function positionBishopNpc() {
+    if (!companion6El) {
+      return;
+    }
+    if (!shouldShowBishopNpc()) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion6El)) {
+        companion6El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + BISHOP_NPC_OX * u - decorScroll);
+    companion6El.hidden = false;
+    companion6El.style.left = `${screenX}px`;
+    companion6El.style.bottom = '0';
+  }
+
+  function shouldShowNunNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'cloister' &&
+        latestState &&
+        !hasRecruitedKind(latestState, 'cloister')
+    );
+  }
+
+  function positionNunNpc() {
+    if (!companion7El) {
+      return;
+    }
+    if (!shouldShowNunNpc()) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion7El)) {
+        companion7El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + NUN_NPC_OX * u - decorScroll);
+    companion7El.hidden = false;
+    companion7El.style.left = `${screenX}px`;
+    companion7El.style.bottom = '0';
+  }
+
   function positionCampExtra(extra, frameIndex) {
     const el = extra.el;
     if (!el || !campActive || landmarkKind !== 'camp' || !campChars1Image) {
@@ -1369,10 +1582,14 @@
 
   function positionTownExtra(extra, frameIndex) {
     const el = extra.el;
-    if (!el || !campActive || landmarkKind !== 'town' || !campChars1Image) {
+    if (!el || !campActive || !campChars1Image) {
       if (el) {
         el.hidden = true;
       }
+      return;
+    }
+    if (landmarkKind !== 'town' && landmarkKind !== 'market' && landmarkKind !== 'cloister') {
+      el.hidden = true;
       return;
     }
     const u = campUnit();
@@ -1389,8 +1606,26 @@
     drawCampExtraFrame(extra, frameIndex);
   }
 
+  function crowdExtrasForLandmark() {
+    if (landmarkKind === 'town') {
+      return TOWN_EXTRAS;
+    }
+    if (landmarkKind === 'market') {
+      return MARKET_EXTRAS;
+    }
+    if (landmarkKind === 'cloister') {
+      return CLOISTER_EXTRAS;
+    }
+    return null;
+  }
+
   function positionAllTownExtras(frameIndex) {
-    TOWN_EXTRAS.forEach((extra) => positionTownExtra(extra, frameIndex));
+    const list = crowdExtrasForLandmark();
+    if (!list) {
+      hideAllTownExtras();
+      return;
+    }
+    list.forEach((extra) => positionTownExtra(extra, frameIndex));
   }
 
   function hideAllTownExtras() {
@@ -1670,6 +1905,68 @@
     }
   }
 
+  function drawBishopNpcFrame(frameIndex) {
+    if (!companion6El || !campNpcImage || !shouldShowBishopNpc()) {
+      return;
+    }
+    const img = campNpcImage;
+    const cols = 11;
+    const cellW = Math.floor(img.naturalWidth / cols);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = BISHOP_NPC_ROWS[frameIndex % BISHOP_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion6El.width = Math.round(size * dpr);
+    companion6El.height = Math.round(size * dpr);
+    companion6El.style.width = `${size}px`;
+    companion6El.style.height = `${size}px`;
+    const ctx = companion6El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, BISHOP_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, BISHOP_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
+  function drawNunNpcFrame(frameIndex) {
+    if (!companion7El || !shouldShowNunNpc()) {
+      return;
+    }
+    const img = groveFemaleImage || (findCharacter('female-0') || {}).sheetImage;
+    if (!img) {
+      return;
+    }
+    const cellW = Math.floor(img.naturalWidth / 12);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = NUN_NPC_ROWS[frameIndex % NUN_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion7El.width = Math.round(size * dpr);
+    companion7El.height = Math.round(size * dpr);
+    companion7El.style.width = `${size}px`;
+    companion7El.style.height = `${size}px`;
+    const ctx = companion7El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, NUN_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, NUN_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex) {
     const el = slot && slot.el;
     const image =
@@ -1798,10 +2095,21 @@
         drawStoneNpcFrame(campNpcFrame);
         positionStoneNpc();
       }
+      if (shouldShowBishopNpc()) {
+        drawBishopNpcFrame(campNpcFrame);
+        positionBishopNpc();
+      }
+      if (shouldShowNunNpc()) {
+        drawNunNpcFrame(campNpcFrame);
+        positionNunNpc();
+      }
       if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
       }
-      if (campActive && landmarkKind === 'town') {
+      if (
+        campActive &&
+        (landmarkKind === 'town' || landmarkKind === 'market' || landmarkKind === 'cloister')
+      ) {
         positionAllTownExtras(campNpcFrame);
       }
       campNpcAnimId = requestAnimationFrame(tick);
@@ -1817,6 +2125,12 @@
     CAMP_EXTRAS[2].el = campKnightLuteEl;
     TOWN_EXTRAS.forEach((extra) => {
       extra.el = document.getElementById(extra.id);
+    });
+    MARKET_EXTRAS.forEach((extra, index) => {
+      extra.el = TOWN_EXTRAS[index] ? TOWN_EXTRAS[index].el : document.getElementById(extra.id);
+    });
+    CLOISTER_EXTRAS.forEach((extra, index) => {
+      extra.el = TOWN_EXTRAS[index] ? TOWN_EXTRAS[index].el : document.getElementById(extra.id);
     });
     if (maleSrc) {
       campNpcImage = await loadImage(maleSrc);
@@ -1891,6 +2205,45 @@
     }
   }
 
+  async function prepareVillageArt() {
+    const keys = [
+      ['house-1', 'data-house-1', 'house1'],
+      ['house-2', 'data-house-2', 'house2'],
+      ['house-3', 'data-house-3', 'house3'],
+      ['house-4', 'data-house-4', 'house4'],
+      ['house-5', 'data-house-5', 'house5'],
+      ['house-6', 'data-house-6', 'house6'],
+      ['stall-1', 'data-stall-1', 'stall1'],
+      ['stall-2', 'data-stall-2', 'stall2'],
+      ['stall-3', 'data-stall-3', 'stall3'],
+      ['tavern-1', 'data-tavern-1', 'tavern1'],
+      ['tavern-2', 'data-tavern-2', 'tavern2'],
+    ];
+    const loaded = {};
+    await Promise.all(
+      keys.map(async ([key, attr, datasetKey]) => {
+        const src = appEl.getAttribute(attr) || appEl.dataset[datasetKey];
+        if (!src) {
+          return;
+        }
+        loaded[key] = await loadImage(src);
+      })
+    );
+    villageArtImgs = loaded;
+    // Reuse house images already loaded for Whore Town when present.
+    if (townHouseImgs && townHouseImgs.length === TOWN_HOUSES.length) {
+      TOWN_HOUSES.forEach((house, index) => {
+        if (!villageArtImgs[house.id] && townHouseImgs[index]) {
+          villageArtImgs[house.id] = townHouseImgs[index];
+        }
+      });
+    }
+    if (campActive) {
+      startCampNpcAnim();
+      paintDecor();
+    }
+  }
+
   function onArrivedAtDestination() {
     travelEnabled = false;
     stopGroundScroll();
@@ -1933,6 +2286,12 @@
     }
     if (companion5El && !hasRecruitedKind(latestState, 'stone')) {
       companion5El.hidden = true;
+    }
+    if (companion6El && !hasRecruitedKind(latestState, 'market')) {
+      companion6El.hidden = true;
+    }
+    if (companion7El && !hasRecruitedKind(latestState, 'cloister')) {
+      companion7El.hidden = true;
     }
     if (departBtnEl) {
       departBtnEl.hidden = true;
@@ -1988,7 +2347,11 @@
             ? TENT_NPC_OX
             : landmarkKind === 'stone'
               ? STONE_NPC_OX
-              : 0.85;
+              : landmarkKind === 'market'
+                ? BISHOP_NPC_OX
+                : landmarkKind === 'cloister'
+                  ? NUN_NPC_OX
+                  : 0.85;
     return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
@@ -2013,6 +2376,10 @@
       positionTentNpc();
     } else if (landmarkKind === 'stone') {
       positionStoneNpc();
+    } else if (landmarkKind === 'market') {
+      positionBishopNpc();
+    } else if (landmarkKind === 'cloister') {
+      positionNunNpc();
     } else {
       positionCampNpc();
     }
@@ -2027,6 +2394,10 @@
       drawTentNpcFrame(frameIndex);
     } else if (landmarkKind === 'stone') {
       drawStoneNpcFrame(frameIndex);
+    } else if (landmarkKind === 'market') {
+      drawBishopNpcFrame(frameIndex);
+    } else if (landmarkKind === 'cloister') {
+      drawNunNpcFrame(frameIndex);
     } else {
       drawCampNpcFrame(frameIndex);
     }
@@ -2340,6 +2711,8 @@
     positionTownNpc();
     positionTentNpc();
     positionStoneNpc();
+    positionBishopNpc();
+    positionNunNpc();
     positionDepartButton();
   }
 
@@ -2361,6 +2734,8 @@
       paintTown(ctx, height);
       paintTentCamp(ctx, height);
       paintStoneWayside(ctx, height);
+      paintMarketVillage(ctx, height);
+      paintCloisterVillage(ctx, height);
     }
   }
 
@@ -3946,6 +4321,10 @@
 
   prepareTentArt().catch((error) => {
     console.error('[travelling-kingdom] tent art prep failed', error);
+  });
+
+  prepareVillageArt().catch((error) => {
+    console.error('[travelling-kingdom] village art prep failed', error);
   });
 
   prepareParallax().catch((error) => {
