@@ -91,8 +91,8 @@
   const CAMP_DEST_LEVEL = 1;
   /** Apple Grove (level 2) landmark — orchard art is bottom-aligned to the trail. */
   const GROVE_DEST_LEVEL = 2;
-  const GROVE_APPLE_COUNT = 30;
   const GROVE_WILLOW_OX = 0.2;
+  const GROVE_WILLOW_SCALE = 1.05;
   const GROVE_NPC_OX = 0.85;
   const GROVE_NPC_COL = 1; // female sheet column 2 (1-based)
   const GROVE_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
@@ -101,20 +101,27 @@
   const TOWN_NPC_COL = 3; // female sheet column 4 (1-based)
   const TOWN_NPC_OX = 0.85;
   const TOWN_NPC_ROWS = [1, 2, 3, 4, 5]; // standing rows 2–6 (1-based)
-  const HOUSE_DISPLAY_SCALE = 0.5;
+  const HOUSE_DISPLAY_SCALE = 1.0;
   const TOWN_HOUSES = [
-    { id: 'house-1', file: 'house_1', ox: -7, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-2', file: 'house_2', ox: -4.5, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-3', file: 'house_3', ox: -2.2, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-1', file: 'house_1', ox: -10.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-2', file: 'house_2', ox: -6.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-3', file: 'house_3', ox: -3.2, scale: HOUSE_DISPLAY_SCALE },
     { id: 'house-4', file: 'house_4', ox: 0, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-5', file: 'house_5', ox: 2.5, scale: HOUSE_DISPLAY_SCALE },
-    { id: 'house-6', file: 'house_6', ox: 5.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-5', file: 'house_5', ox: 3.5, scale: HOUSE_DISPLAY_SCALE },
+    { id: 'house-6', file: 'house_6', ox: 7.5, scale: HOUSE_DISPLAY_SCALE },
   ];
-  // Fixed offsets preserve the same orchard silhouette after every reload.
-  const GROVE_APPLE_OX = [
-    -5.5, -5.1, -4.8, -4.4, -4.0, -3.7, -3.3, -2.9, -2.6, -2.2,
-    -1.8, -1.5, -1.1, -0.8, -0.45, 0.7, 1.05, 1.4, 1.75, 2.1,
-    2.45, 2.8, 3.15, 3.5, 3.85, 4.2, 4.55, 4.9, 5.2, 5.5,
+  // Sparse orchard: fewer trees, wider gaps, mixed sizes.
+  const GROVE_APPLES = [
+    { ox: -5.4, scale: 0.78 },
+    { ox: -4.1, scale: 1.18 },
+    { ox: -2.7, scale: 0.92 },
+    { ox: -1.5, scale: 1.08 },
+    { ox: -0.35, scale: 0.72 },
+    { ox: 1.1, scale: 1.22 },
+    { ox: 2.4, scale: 0.88 },
+    { ox: 3.6, scale: 1.05 },
+    { ox: 4.7, scale: 0.8 },
+    { ox: 5.6, scale: 1.12 },
   ];
   const CAMP_PIECES = [
     { id: 'leftTent', row: 1, col: 0, w: 3, h: 2, ox: -3, oy: 0 },
@@ -183,29 +190,30 @@
     { id: 'town-i', row: 9, cols: [5, 6, 7, 8, 9], ox: 6.2, size: 88, el: null },
     { id: 'town-dog', row: 7, cols: [5, 6, 7, 8, 9], ox: 5.2, size: 96, mirror: true, el: null },
   ];
-  const COMPANION_SLOTS = [
-    {
+  /** Companion look is keyed by which landmark recruited them (not party index). */
+  const COMPANION_BY_KIND = {
+    camp: {
       id: 'hooded',
+      kind: 'camp',
       el: campNpcEl,
-      minParty: 2,
       sheet: 'male',
       col: 3,
     },
-    {
+    grove: {
       id: 'forest',
+      kind: 'grove',
       el: companion2El,
-      minParty: 3,
       sheet: 'female',
       col: 1,
     },
-    {
+    town: {
       id: 'town',
+      kind: 'town',
       el: companion3El,
-      minParty: 4,
       sheet: 'female',
       col: 3,
     },
-  ];
+  };
 
   // Layer 1 = nearest (ground-like), layer 6 = farthest (static sky)
   // Layer 1 art is pre-cropped (solid green base removed from the PNG).
@@ -264,6 +272,8 @@
   let decorScroll = 0;
   let decorNextSpawnX = 0;
   let campActive = false;
+  /** After Continue/recruit, keep the departed landmark until it scrolls off-screen. */
+  let landmarkLinger = false;
   let campPotWorldX = 0;
   /** Active shared landmark kind; camp variables retain their names for compatibility. */
   let landmarkKind = null;
@@ -627,9 +637,25 @@
     return Math.max(1, Math.min(4, Math.floor((state && state.partySize) || 1)));
   }
 
+  /** Landmarks already recruited, in journey order (matches earlyLandmarkOrder). */
+  function recruitedLandmarkKinds(state) {
+    const order = earlyLandmarkOrderFromState(state);
+    const count = Math.min(3, Math.max(0, companionCountFromState(state) - 1));
+    return order.slice(0, count);
+  }
+
+  function hasRecruitedKind(state, kind) {
+    return recruitedLandmarkKinds(state).includes(kind);
+  }
+
+  function activeCompanionSlots(state) {
+    return recruitedLandmarkKinds(state)
+      .map((kind) => COMPANION_BY_KIND[kind])
+      .filter((slot) => slot && slot.el);
+  }
+
   function hasActiveCompanionSlots() {
-    const partySize = companionCountFromState(latestState);
-    return COMPANION_SLOTS.some((slot) => partySize >= slot.minParty);
+    return activeCompanionSlots(latestState).length > 0;
   }
 
   function syncCompanionFromState(state) {
@@ -649,8 +675,13 @@
       } else if (Math.abs(petLeadLeft - petLeadLeftTarget) > 0.5) {
         startCameraEase();
       }
-    } else if (campNpcEl && !campActive) {
-      campNpcEl.hidden = true;
+    } else {
+      Object.keys(COMPANION_BY_KIND).forEach((kind) => {
+        const el = COMPANION_BY_KIND[kind].el;
+        if (el && !campActive) {
+          el.hidden = true;
+        }
+      });
     }
   }
 
@@ -865,8 +896,8 @@
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
     const leftOffset =
-      landmarkKind === 'town' ? -7.5 : landmarkKind === 'grove' ? -5.5 : CAMP_PIECES[0].ox;
-    const rightOffset = landmarkKind === 'town' ? 7.5 : 5.5;
+      landmarkKind === 'town' ? -11.5 : landmarkKind === 'grove' ? -5.8 : CAMP_PIECES[0].ox;
+    const rightOffset = landmarkKind === 'town' ? 11.5 : landmarkKind === 'grove' ? 5.8 : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -888,21 +919,21 @@
       return;
     }
 
+    // Departed location stays painted until it scrolls off the left edge.
+    if (campActive && campWorldLocked && landmarkLinger) {
+      if (isCampOffscreen()) {
+        clearCamp();
+      } else {
+        startCampNpcAnim();
+        return;
+      }
+    }
+
     if (shouldShowLandmark(latestState)) {
       const nextKind = landmarkKindForState(latestState);
-      // After Continue, level advances but the old lock stayed under the pet — that
-      // kept Soldier Camp (or the wrong landmark) stuck for the entire next leg.
-      if (
-        campWorldLocked &&
-        landmarkKind &&
-        nextKind &&
-        landmarkKind !== nextKind &&
-        !latestState.awaitingDeparture
-      ) {
-        campWorldLocked = false;
-      }
       campActive = true;
       landmarkKind = nextKind;
+      landmarkLinger = false;
       if (latestState.awaitingDeparture || campWorldLocked) {
         if (!campWorldLocked) {
           campPotWorldX = decorScroll + getPetScreenX();
@@ -918,7 +949,7 @@
       return;
     }
 
-    // Left destination 1: keep the same camp in world space until it scrolls away.
+    // Left a destination: keep the same landmark in world space until it scrolls away.
     if (campActive && campWorldLocked) {
       if (isCampOffscreen()) {
         clearCamp();
@@ -937,14 +968,14 @@
     const u = campUnit();
     if (landmarkKind === 'grove') {
       return {
-        left: campPotWorldX - 5.5 * u - 8,
-        right: campPotWorldX + 5.5 * u + 8,
+        left: campPotWorldX - 5.8 * u - 8,
+        right: campPotWorldX + 5.8 * u + 8,
       };
     }
     if (landmarkKind === 'town') {
       return {
-        left: campPotWorldX - 7.5 * u - 8,
-        right: campPotWorldX + 7.5 * u + 8,
+        left: campPotWorldX - 11.5 * u - 8,
+        right: campPotWorldX + 11.5 * u + 8,
       };
     }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
@@ -982,17 +1013,19 @@
     }
     const width = Math.max(1, Math.round(appEl.clientWidth));
     const u = campUnit();
-    const drawTree = (img, ox) => {
-      const drawW = img.width || img.naturalWidth;
-      const drawH = img.height || img.naturalHeight;
+    const drawTree = (img, ox, scale) => {
+      const naturalW = img.width || img.naturalWidth;
+      const naturalH = img.height || img.naturalHeight;
+      const drawW = Math.round(naturalW * scale);
+      const drawH = Math.round(naturalH * scale);
       const dx = Math.round(campPotWorldX + ox * u - decorScroll - drawW / 2);
       if (dx + drawW < 0 || dx > width) {
         return;
       }
       ctx.drawImage(img, dx, height - drawH, drawW, drawH);
     };
-    GROVE_APPLE_OX.slice(0, GROVE_APPLE_COUNT).forEach((ox) => drawTree(groveAppleImg, ox));
-    drawTree(groveWillowImg, GROVE_WILLOW_OX);
+    GROVE_APPLES.forEach((tree) => drawTree(groveAppleImg, tree.ox, tree.scale));
+    drawTree(groveWillowImg, GROVE_WILLOW_OX, GROVE_WILLOW_SCALE);
   }
 
   function paintTown(ctx, height) {
@@ -1017,9 +1050,17 @@
   }
 
   function positionCampNpc() {
-    if (!campNpcEl || !campActive || landmarkKind !== 'camp' || companionJoined) {
-      if (campNpcEl && !companionJoined) {
-        campNpcEl.hidden = true;
+    if (
+      !campNpcEl ||
+      !campActive ||
+      landmarkKind !== 'camp' ||
+      hasRecruitedKind(latestState, 'camp')
+    ) {
+      if (campNpcEl && !hasRecruitedKind(latestState, 'camp') && !recruitBusy) {
+        // Leave alone if this canvas is an active trail companion.
+        if (!activeCompanionSlots(latestState).some((s) => s.el === campNpcEl)) {
+          campNpcEl.hidden = true;
+        }
       }
       return;
     }
@@ -1036,7 +1077,7 @@
       campActive &&
         landmarkKind === 'grove' &&
         latestState &&
-        companionCountFromState(latestState) < 3
+        !hasRecruitedKind(latestState, 'grove')
     );
   }
 
@@ -1045,7 +1086,7 @@
       return;
     }
     if (!shouldShowGroveNpc()) {
-      if (!latestState || companionCountFromState(latestState) < 3) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion2El)) {
         companion2El.hidden = true;
       }
       return;
@@ -1062,7 +1103,7 @@
       campActive &&
         landmarkKind === 'town' &&
         latestState &&
-        companionCountFromState(latestState) < 4
+        !hasRecruitedKind(latestState, 'town')
     );
   }
 
@@ -1071,7 +1112,7 @@
       return;
     }
     if (!shouldShowTownNpc()) {
-      if (!latestState || companionCountFromState(latestState) < 4) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion3El)) {
         companion3El.hidden = true;
       }
       return;
@@ -1227,7 +1268,7 @@
   }
 
   function drawCampNpcFrame(frameIndex) {
-    if (!campNpcEl || !campNpcImage || companionJoined) {
+    if (!campNpcEl || !campNpcImage || hasRecruitedKind(latestState, 'camp')) {
       return;
     }
     const img = campNpcImage;
@@ -1363,12 +1404,8 @@
       slot && slot.sheet === 'female'
         ? (findCharacter('female-0') || {}).sheetImage
         : campNpcImage;
-    if (
-      !el ||
-      !image ||
-      !latestState ||
-      companionCountFromState(latestState) < slot.minParty
-    ) {
+    const active = activeCompanionSlots(latestState);
+    if (!el || !image || !active.some((s) => s.id === slot.id)) {
       return;
     }
     const img = image;
@@ -1406,7 +1443,7 @@
   }
 
   function drawActiveCompanionWalkFrames(frameIndex) {
-    COMPANION_SLOTS.forEach((slot) => drawCompanionWalkFrame(slot, frameIndex));
+    activeCompanionSlots(latestState).forEach((slot) => drawCompanionWalkFrame(slot, frameIndex));
   }
 
   function positionCompanionsBehindPet() {
@@ -1414,16 +1451,16 @@
       return;
     }
     const petLeft = petEl.offsetLeft;
-    COMPANION_SLOTS.forEach((slot, index) => {
-      const el = slot.el;
-      if (!el) {
-        return;
-      }
-      const active = latestState && (latestState.partySize || 1) >= slot.minParty;
-      if (!active) {
+    const active = activeCompanionSlots(latestState);
+    const activeEls = new Set(active.map((slot) => slot.el));
+    Object.keys(COMPANION_BY_KIND).forEach((kind) => {
+      const el = COMPANION_BY_KIND[kind].el;
+      if (el && !activeEls.has(el)) {
         el.hidden = true;
-        return;
       }
+    });
+    active.forEach((slot, index) => {
+      const el = slot.el;
       const left = Math.max(-20, petLeft - (index + 1) * COMPANION_FOLLOW_GAP);
       el.hidden = false;
       el.style.left = `${left}px`;
@@ -1460,7 +1497,7 @@
       } else {
         campNpcLastTs = timestamp;
       }
-      if (campActive && landmarkKind === 'camp' && !companionJoined) {
+      if (campActive && landmarkKind === 'camp' && !hasRecruitedKind(latestState, 'camp')) {
         drawCampNpcFrame(campNpcFrame);
         positionCampNpc();
       }
@@ -1557,6 +1594,7 @@
     // Lock camp under the pet in world space (scrolls away after Continue).
     campPotWorldX = decorScroll + getPetScreenX();
     campWorldLocked = true;
+    landmarkLinger = false;
     campActive = true;
     landmarkKind = landmarkKindForState(latestState);
     startCampNpcAnim();
@@ -1573,16 +1611,17 @@
     campActive = false;
     landmarkKind = null;
     campWorldLocked = false;
+    landmarkLinger = false;
     stopCampNpcAnim();
     hideAllCampExtras();
     hideAllTownExtras();
-    if (campNpcEl && !companionJoined) {
+    if (campNpcEl && !hasRecruitedKind(latestState, 'camp')) {
       campNpcEl.hidden = true;
     }
-    if (companion2El && (!latestState || companionCountFromState(latestState) < 3)) {
+    if (companion2El && !hasRecruitedKind(latestState, 'grove')) {
       companion2El.hidden = true;
     }
-    if (companion3El && (!latestState || companionCountFromState(latestState) < 4)) {
+    if (companion3El && !hasRecruitedKind(latestState, 'town')) {
       companion3El.hidden = true;
     }
     if (departBtnEl) {
@@ -1601,13 +1640,10 @@
     }
     latestState = state;
     traveledPx = 0;
-    // Do not keep the previous landmark locked under the party after a depart —
-    // that made Soldier Camp stick through the whole next leg.
-    if (campActive && !recruitBusy) {
-      const nextKind = landmarkKindForState(state);
-      if (!nextKind || nextKind !== landmarkKind) {
-        clearCamp();
-      }
+    // Keep the landmark we just left until it scrolls off-screen.
+    if (campActive && landmarkKind) {
+      landmarkLinger = true;
+      campWorldLocked = true;
     }
     // Already-recruited (reload): skip ceremony. Fresh landmark depart runs startRecruitCeremony.
     if (!recruitBusy) {
@@ -1789,8 +1825,10 @@
     }
     departing = false;
     updateMetersUi(latestState);
-    // Companions own their walking canvases now — drop the finished landmark so the
-    // next destination can spawn ahead (do not keep camp locked under the party).
+    // Keep the departed location in world space so it scrolls away with the road.
+    landmarkLinger = true;
+    campWorldLocked = true;
+    campActive = true;
     positionCompanionsBehindPet();
     drawActiveCompanionWalkFrames(0);
 
@@ -1802,7 +1840,6 @@
     // Join + resume travel immediately; ease camera framing in parallel while scrolling
     // so the lead shift reads as a camera pan, not sliding on a frozen plate.
     setCameraTargetForParty(latestState.partySize || joinPartySize || 2);
-    clearCamp();
     syncCampWorldPosition();
     paintDecor();
     positionCompanionsBehindPet();

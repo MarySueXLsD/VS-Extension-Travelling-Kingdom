@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.47.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.48.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -53,7 +53,8 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.44 | `travelling-kingdom-0.0.44.vsix` | — | — | Legs 30/30/50; clear landmark after Continue so camp does not stick |
 | 0.0.45 | `travelling-kingdom-0.0.45.vsix` | — | — | Interim packaging (pre-shuffle) |
 | 0.0.46 | `travelling-kingdom-0.0.46.vsix` | 1.08 MB | 61 | Shuffle camp/grove/town; each early leg 50 m |
-| 0.0.47 | `travelling-kingdom-0.0.47.vsix` | 1.08 MB | 61 | Current: cache-bust destinations.json; show version in Settings |
+| 0.0.47 | `travelling-kingdom-0.0.47.vsix` | 1.08 MB | 61 | Cache-bust destinations.json; show version in Settings |
+| 0.0.48 | `travelling-kingdom-0.0.48.vsix` | 1.08 MB | 61 | Current: sparse grove, correct recruit looks, linger landmark, 2× town houses |
 
 ---
 
@@ -393,6 +394,13 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 
 - Settings shows **Travelling Kingdom v…** so the running install is obvious.
 - `destinations.json` webview URI is cache-busted like other assets (avoids stale River Town / 100/300/500 tables).
+
+## 0.0.48 — Landmark polish + recruit look fix
+
+- Apple Grove: fewer apple trees, wider spacing, mixed scales.
+- Recruits keep their landmark look (grove/town no longer snap to hooded traveler); companions keyed by recruited landmark order.
+- After Continue / recruit, the current location lingers and scrolls away instead of vanishing.
+- Whore Town houses drawn at **2×** previous scale (wider spacing).
 
 ---
 
