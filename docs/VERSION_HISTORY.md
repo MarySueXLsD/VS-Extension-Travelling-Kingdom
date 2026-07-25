@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.43.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.44.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -50,6 +50,7 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Lead inset + party camera room |
 | 0.0.42 | `travelling-kingdom-0.0.42.vsix` | 1.08 MB | 61 | Apple Grove landmark; party of 3; dual companion trail + camera |
 | 0.0.43 | `travelling-kingdom-0.0.43.vsix` | 1.08 MB | 61 | Whore Town landmark; party of 4; third companion trail |
+| 0.0.44 | `travelling-kingdom-0.0.44.vsix` | — | — | Current: legs 30/30/50; clear landmark after Continue so camp does not stick |
 
 ---
 
@@ -368,10 +369,15 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 
 ## 0.0.43 — Whore Town and party of four
 
-- Destination level 3 is **Whore Town** (500 meters); departing it raises `partySize` to **4**.
+- Destination level 3 is **Whore Town**; departing it raises `partySize` to **4**.
 - **Whore Town landmark**: six environment houses, nine `characters1.png` townsfolk, and a dog; a town woman idles by the centered `house_4`.
 - **Third companion slot** (`#companion-3`) recruits the town woman (female sheet column 4) through the shared scroll-meet ceremony.
 - **Party-of-4 trail + camera**: lead inset is **32px**, camera pad is **32px per companion**, and follow gap is **40%** of sprite size.
+
+## 0.0.44 — Landmark clear + short early legs
+
+- Destination meters: Soldier Camp **30**, Apple Grove **30**, Whore Town **50**.
+- After Continue / recruit finish, the previous landmark is cleared so Soldier Camp (and its hooded idle) no longer stays locked under the party for the whole next leg; the next landmark spawns ahead by remaining meters.
 
 ---
 

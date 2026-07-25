@@ -841,8 +841,20 @@
     }
 
     if (shouldShowLandmark(latestState)) {
+      const nextKind = landmarkKindForState(latestState);
+      // After Continue, level advances but the old lock stayed under the pet — that
+      // kept Soldier Camp (or the wrong landmark) stuck for the entire next leg.
+      if (
+        campWorldLocked &&
+        landmarkKind &&
+        nextKind &&
+        landmarkKind !== nextKind &&
+        !latestState.awaitingDeparture
+      ) {
+        campWorldLocked = false;
+      }
       campActive = true;
-      landmarkKind = landmarkKindForState(latestState);
+      landmarkKind = nextKind;
       if (latestState.awaitingDeparture || campWorldLocked) {
         if (!campWorldLocked) {
           campPotWorldX = decorScroll + getPetScreenX();
@@ -1541,8 +1553,13 @@
     }
     latestState = state;
     traveledPx = 0;
-    if (campActive) {
-      campWorldLocked = true;
+    // Do not keep the previous landmark locked under the party after a depart —
+    // that made Soldier Camp stick through the whole next leg.
+    if (campActive && !recruitBusy) {
+      const nextKind = landmarkKindForState(state);
+      if (!nextKind || nextKind !== landmarkKind) {
+        clearCamp();
+      }
     }
     // Already-recruited (reload): skip ceremony. Fresh landmark depart runs startRecruitCeremony.
     if (!recruitBusy) {
@@ -1724,7 +1741,8 @@
     }
     departing = false;
     updateMetersUi(latestState);
-    // Companions own their walking canvases now — keep landmark scenery, not idle recruits.
+    // Companions own their walking canvases now — drop the finished landmark so the
+    // next destination can spawn ahead (do not keep camp locked under the party).
     positionCompanionsBehindPet();
     drawActiveCompanionWalkFrames(0);
 
@@ -1736,6 +1754,7 @@
     // Join + resume travel immediately; ease camera framing in parallel while scrolling
     // so the lead shift reads as a camera pan, not sliding on a frozen plate.
     setCameraTargetForParty(latestState.partySize || joinPartySize || 2);
+    clearCamp();
     syncCampWorldPosition();
     paintDecor();
     positionCompanionsBehindPet();
