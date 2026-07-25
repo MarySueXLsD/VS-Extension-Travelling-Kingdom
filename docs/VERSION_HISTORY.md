@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 0.0.42.**
+Packaged `.vsix` files live in the project root. **Latest: 0.0.43.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -49,6 +49,7 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.40 | `travelling-kingdom-0.0.40.vsix` | ~979 KB | 57 | Rebrand to Travelling Kingdom; publisher MarySue |
 | 0.0.41 | `travelling-kingdom-0.0.41.vsix` | ~979 KB | 57 | Lead inset + party camera room |
 | 0.0.42 | `travelling-kingdom-0.0.42.vsix` | 1.08 MB | 61 | Apple Grove landmark; party of 3; dual companion trail + camera |
+| 0.0.43 | `travelling-kingdom-0.0.43.vsix` | 1.08 MB | 61 | Whore Town landmark; party of 4; third companion trail |
 
 ---
 
@@ -340,6 +341,7 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 | 0.0.30 → 0.0.40 | — | Party recruit, scroll-meet cutscene, live camera; rebrand to Travelling Kingdom (`travellingKingdom.*`, publisher MarySue) |
 | 0.0.40 → 0.0.41 | — | Lead inset `PET_BASE_LEFT` 36 + party pad 44 so solo/party/cutscene fit farther from the left edge |
 | 0.0.41 → 0.0.42 | `apple_tree.png`, `willow_tree.png` | Apple Grove destination; `#companion-2`; grove landmark + recruit cutscene; party of 3 trail/camera (`PET_BASE_LEFT` 28, `CAMERA_PAD_PER_MEMBER` 36) |
+| 0.0.42 → 0.0.43 | `house_1.png`–`house_6.png` | Whore Town destination; `#companion-3`; six-house town landmark + recruit cutscene; party of 4 trail/camera (`PET_BASE_LEFT` 32, `CAMERA_PAD_PER_MEMBER` 32) |
 
 ---
 
@@ -363,6 +365,13 @@ Character spritesheets (`female_spritesheet.png`, `male_spritesheet.png`) ship i
 - **Second companion slot** (`#companion-2`); hooded camp recruit stays slot 0, grove recruit slot 1
 - **Scroll-meet recruit cutscene** parameterized by `joinPartySize` (camp → 2, grove → 3); grove NPC mirrors when facing the pet
 - **Party-of-3 trail + camera**: `PET_BASE_LEFT` **28**, `CAMERA_PAD_PER_MEMBER` **36**; lead eases right as companions join; both followers walk behind the hero after grove Continue
+
+## 0.0.43 — Whore Town and party of four
+
+- Destination level 3 is **Whore Town** (500 meters); departing it raises `partySize` to **4**.
+- **Whore Town landmark**: six environment houses, nine `characters1.png` townsfolk, and a dog; a town woman idles by the centered `house_4`.
+- **Third companion slot** (`#companion-3`) recruits the town woman (female sheet column 4) through the shared scroll-meet ceremony.
+- **Party-of-4 trail + camera**: lead inset is **32px**, camera pad is **32px per companion**, and follow gap is **40%** of sprite size.
 
 ---
 
