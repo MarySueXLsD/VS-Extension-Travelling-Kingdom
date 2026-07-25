@@ -84,10 +84,13 @@ export function isValidEarlyLandmarkOrder(raw: unknown): boolean {
 export function landmarkKindForLevel(
   order: EarlyLandmarkKind[] | undefined,
   level: number
-): EarlyLandmarkKind | 'tent' | null {
+): EarlyLandmarkKind | 'tent' | 'stone' | null {
   const lvl = Math.floor(level);
   if (lvl === 4) {
     return 'tent';
+  }
+  if (lvl === 5) {
+    return 'stone';
   }
   const idx = lvl - 1;
   if (idx < 0 || idx > 2) {
@@ -322,6 +325,8 @@ export class PetStateStore {
       partySize = Math.max(partySize, 4);
     } else if (level === 4) {
       partySize = Math.max(partySize, 5);
+    } else if (level === 5) {
+      partySize = Math.max(partySize, 6);
     }
     const next: PetState = {
       ...current,

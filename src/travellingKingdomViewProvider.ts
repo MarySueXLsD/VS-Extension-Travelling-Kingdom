@@ -418,6 +418,7 @@ export class TravellingKingdomViewProvider implements vscode.WebviewViewProvider
           <canvas id="companion-2" class="camp-npc companion-slot" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-3" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="companion-4" class="companion-slot companion-slot-right" width="96" height="96" aria-hidden="true" hidden></canvas>
+          <canvas id="companion-5" class="companion-slot companion-slot-far" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-dog" class="camp-actor" width="96" height="96" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-sit" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>
           <canvas id="camp-knight-lute" class="camp-actor" width="88" height="88" aria-hidden="true" hidden></canvas>

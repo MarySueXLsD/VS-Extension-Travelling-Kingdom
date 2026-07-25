@@ -19,6 +19,7 @@
   const companion2El = document.getElementById('companion-2');
   const companion3El = document.getElementById('companion-3');
   const companion4El = document.getElementById('companion-4');
+  const companion5El = document.getElementById('companion-5');
   const campDogEl = document.getElementById('camp-dog');
   const campKnightSitEl = document.getElementById('camp-knight-sit');
   const campKnightLuteEl = document.getElementById('camp-knight-lute');
@@ -110,6 +111,13 @@
   const TENT_NPC_COL = 5; // male sheet column 6 (1-based)
   const TENT_NPC_ROWS = [1, 2, 3, 4, 5];
   const TENT_DISPLAY_SCALE = 1.15;
+  /** Wayside Stone (level 5) — traveler + one decor stone. */
+  const STONE_DEST_LEVEL = 5;
+  const STONE_NPC_OX = 0.55;
+  const STONE_NPC_COL = 7; // female sheet column 8 (1-based)
+  const STONE_NPC_ROWS = [1, 2, 3, 4, 5];
+  // decor.png 0-based: medium green rock cluster beside the traveler.
+  const STONE_DECOR = { row: 5, col: 0, w: 1, h: 1, ox: -0.55 };
   const HOUSE_DISPLAY_SCALE = 1.25;
   const TOWN_HOUSES = [
     { id: 'house-1', file: 'house_1', ox: -12.5, scale: HOUSE_DISPLAY_SCALE },
@@ -230,6 +238,14 @@
       el: companion3El,
       sheet: 'female',
       col: 3,
+      side: 'left',
+    },
+    stone: {
+      id: 'traveler',
+      kind: 'stone',
+      el: companion5El,
+      sheet: 'female',
+      col: STONE_NPC_COL,
       side: 'left',
     },
   };
@@ -406,6 +422,7 @@
     grove: 'Apple Grove',
     town: 'Whore Town',
     tent: 'Scout Camp',
+    stone: 'Wayside Stone',
   };
 
   function shuffleEarlyLandmarks() {
@@ -439,6 +456,9 @@
     const lvl = Math.floor(Number(level) || 1);
     if (lvl === 4) {
       return 'tent';
+    }
+    if (lvl === 5) {
+      return 'stone';
     }
     const idx = lvl - 1;
     if (idx < 0 || idx > 2) {
@@ -478,7 +498,7 @@
 
   function destinationNameForLevel(level) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    if (latestState && lvl >= 1 && lvl <= 4) {
+    if (latestState && lvl >= 1 && lvl <= 5) {
       const kind = landmarkKindAtLevel(latestState, lvl);
       if (kind && EARLY_LANDMARK_NAMES[kind]) {
         return EARLY_LANDMARK_NAMES[kind];
@@ -646,6 +666,8 @@
       partySize = Math.max(partySize, 4);
     } else if (state.level === 4) {
       partySize = Math.max(partySize, 5);
+    } else if (state.level === 5) {
+      partySize = Math.max(partySize, 6);
     }
     return {
       ...state,
@@ -662,17 +684,25 @@
   }
 
   function companionCountFromState(state) {
-    return Math.max(1, Math.min(5, Math.floor((state && state.partySize) || 1)));
+    return Math.max(1, Math.min(6, Math.floor((state && state.partySize) || 1)));
   }
 
-  /** Recruited companions: Scout Camp guard leads on the right; early recruits trail left. */
+  /** Tent guard leads on the right; early recruits trail left; wayside traveler is last. */
   function recruitedLandmarkKinds(state) {
     const order = earlyLandmarkOrderFromState(state);
     const party = companionCountFromState(state);
-    const earlyCount = Math.min(3, Math.max(0, party - 1));
+    const hasTent = party >= 5;
+    const hasStone = party >= 6;
+    const earlyCount = Math.min(
+      3,
+      Math.max(0, party - 1 - (hasTent ? 1 : 0) - (hasStone ? 1 : 0))
+    );
     const kinds = order.slice(0, earlyCount);
-    if (party >= 5) {
+    if (hasTent) {
       kinds.unshift('tent');
+    }
+    if (hasStone) {
+      kinds.push('stone');
     }
     return kinds;
   }
@@ -912,12 +942,17 @@
     return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'tent');
   }
 
+  function shouldShowStone(state) {
+    return Boolean(state && state.characterId && landmarkKindAtLevel(state, state.level) === 'stone');
+  }
+
   function shouldShowLandmark(state) {
     return (
       shouldShowCamp(state) ||
       shouldShowGrove(state) ||
       shouldShowTown(state) ||
-      shouldShowTent(state)
+      shouldShowTent(state) ||
+      shouldShowStone(state)
     );
   }
 
@@ -947,7 +982,9 @@
           ? -8.0
           : landmarkKind === 'tent'
             ? -4.0
-            : CAMP_PIECES[0].ox;
+            : landmarkKind === 'stone'
+              ? -1.5
+              : CAMP_PIECES[0].ox;
     const rightOffset =
       landmarkKind === 'town'
         ? 13.5
@@ -955,7 +992,9 @@
           ? 8.0
           : landmarkKind === 'tent'
             ? 4.0
-            : 5.5;
+            : landmarkKind === 'stone'
+              ? 1.5
+              : 5.5;
     const left = campPotWorldX + leftOffset * u - decorScroll;
     const right = campPotWorldX + rightOffset * u - decorScroll;
     return right < -48 || left > width + 48;
@@ -1040,6 +1079,12 @@
       return {
         left: campPotWorldX - 4.0 * u - 8,
         right: campPotWorldX + 4.0 * u + 8,
+      };
+    }
+    if (landmarkKind === 'stone') {
+      return {
+        left: campPotWorldX - 1.5 * u - 8,
+        right: campPotWorldX + 1.5 * u + 8,
       };
     }
     const left = campPotWorldX + CAMP_PIECES[0].ox * u - 8;
@@ -1132,6 +1177,33 @@
     };
     drawTent(tentSmallImg, TENT_SMALL_OX, TENT_DISPLAY_SCALE * 0.85);
     drawTent(tentLargeImg, TENT_LARGE_OX, TENT_DISPLAY_SCALE);
+  }
+
+  function paintStoneWayside(ctx, height) {
+    if (!campActive || landmarkKind !== 'stone' || !decorImg || !decorCell) {
+      return;
+    }
+    const width = Math.max(1, Math.round(appEl.clientWidth));
+    const u = campUnit();
+    const piece = STONE_DECOR;
+    const sizeW = piece.w * u;
+    const sizeH = piece.h * u;
+    const dx = Math.round(campPotWorldX + piece.ox * u - decorScroll);
+    if (dx + sizeW < 0 || dx > width) {
+      return;
+    }
+    const dy = height - sizeH;
+    ctx.drawImage(
+      decorImg,
+      piece.col * decorCell,
+      piece.row * decorCell,
+      piece.w * decorCell,
+      piece.h * decorCell,
+      dx,
+      dy,
+      sizeW,
+      sizeH
+    );
   }
 
   function positionCampNpc() {
@@ -1233,6 +1305,32 @@
     companion4El.hidden = false;
     companion4El.style.left = `${screenX}px`;
     companion4El.style.bottom = '0';
+  }
+
+  function shouldShowStoneNpc() {
+    return Boolean(
+      campActive &&
+        landmarkKind === 'stone' &&
+        latestState &&
+        !hasRecruitedKind(latestState, 'stone')
+    );
+  }
+
+  function positionStoneNpc() {
+    if (!companion5El) {
+      return;
+    }
+    if (!shouldShowStoneNpc()) {
+      if (!activeCompanionSlots(latestState).some((s) => s.el === companion5El)) {
+        companion5El.hidden = true;
+      }
+      return;
+    }
+    const u = campUnit();
+    const screenX = Math.round(campPotWorldX + STONE_NPC_OX * u - decorScroll);
+    companion5El.hidden = false;
+    companion5El.style.left = `${screenX}px`;
+    companion5El.style.bottom = '0';
   }
 
   function positionCampExtra(extra, frameIndex) {
@@ -1540,6 +1638,38 @@
     }
   }
 
+  function drawStoneNpcFrame(frameIndex) {
+    if (!companion5El || !shouldShowStoneNpc()) {
+      return;
+    }
+    const img = groveFemaleImage || (findCharacter('female-0') || {}).sheetImage;
+    if (!img) {
+      return;
+    }
+    const cellW = Math.floor(img.naturalWidth / 12);
+    const cellH = Math.floor(img.naturalHeight / 14);
+    const row = STONE_NPC_ROWS[frameIndex % STONE_NPC_ROWS.length];
+    const dpr = window.devicePixelRatio || 1;
+    const size = SPRITE_DISPLAY;
+    companion5El.width = Math.round(size * dpr);
+    companion5El.height = Math.round(size * dpr);
+    companion5El.style.width = `${size}px`;
+    companion5El.style.height = `${size}px`;
+    const ctx = companion5El.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, size, size);
+    if (npcFaceRight) {
+      ctx.save();
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, STONE_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, STONE_NPC_COL * cellW, row * cellH, cellW, cellH, 0, 0, size, size);
+    }
+  }
+
   function drawCompanionWalkFrame(slot, frameIndex) {
     const el = slot && slot.el;
     const image =
@@ -1663,6 +1793,10 @@
       if (shouldShowTentNpc()) {
         drawTentNpcFrame(campNpcFrame);
         positionTentNpc();
+      }
+      if (shouldShowStoneNpc()) {
+        drawStoneNpcFrame(campNpcFrame);
+        positionStoneNpc();
       }
       if (campActive && landmarkKind === 'camp') {
         positionAllCampExtras(campNpcFrame);
@@ -1797,6 +1931,9 @@
     if (companion4El && !hasRecruitedKind(latestState, 'tent')) {
       companion4El.hidden = true;
     }
+    if (companion5El && !hasRecruitedKind(latestState, 'stone')) {
+      companion5El.hidden = true;
+    }
     if (departBtnEl) {
       departBtnEl.hidden = true;
     }
@@ -1849,7 +1986,9 @@
           ? TOWN_NPC_OX
           : landmarkKind === 'tent'
             ? TENT_NPC_OX
-            : 0.85;
+            : landmarkKind === 'stone'
+              ? STONE_NPC_OX
+              : 0.85;
     return Math.round(campPotWorldX + npcOffset * u - decorScroll);
   }
 
@@ -1872,6 +2011,8 @@
       positionTownNpc();
     } else if (landmarkKind === 'tent') {
       positionTentNpc();
+    } else if (landmarkKind === 'stone') {
+      positionStoneNpc();
     } else {
       positionCampNpc();
     }
@@ -1884,6 +2025,8 @@
       drawTownNpcFrame(frameIndex);
     } else if (landmarkKind === 'tent') {
       drawTentNpcFrame(frameIndex);
+    } else if (landmarkKind === 'stone') {
+      drawStoneNpcFrame(frameIndex);
     } else {
       drawCampNpcFrame(frameIndex);
     }
@@ -2196,6 +2339,7 @@
     positionGroveNpc();
     positionTownNpc();
     positionTentNpc();
+    positionStoneNpc();
     positionDepartButton();
   }
 
@@ -2216,6 +2360,7 @@
       paintGrove(ctx, height);
       paintTown(ctx, height);
       paintTentCamp(ctx, height);
+      paintStoneWayside(ctx, height);
     }
   }
 

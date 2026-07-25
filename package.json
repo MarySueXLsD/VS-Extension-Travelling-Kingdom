@@ -2,7 +2,7 @@
   "name": "travelling-kingdom",
   "displayName": "Travelling Kingdom",
   "description": "A sidebar travel companion with destinations, party recruitment, meters, and care actions.",
-  "version": "0.0.50",
+  "version": "0.0.51",
   "publisher": "MarySue",
   "engines": {
     "vscode": "^1.85.0"
