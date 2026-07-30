@@ -35,7 +35,7 @@ You are never alone in the Explorer panel. Your hero walks a scrolling pixel-art
       <img src="assets/home-royal.png" width="100%" alt="Travelling Kingdom home view with royal UI">
     </td>
     <td width="50%" valign="top">
-      <strong>Party of two</strong> — The hooded traveler follows behind the lead on the grassy path.
+      <strong>Minimal Interface</strong> — You can even change some settings related to the UI for full immersive VS editor experience.
       <br><br>
       <img src="assets/home-party.png" width="100%" alt="Party walking in the sidebar">
     </td>
