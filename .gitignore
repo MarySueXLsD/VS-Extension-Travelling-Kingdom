@@ -7,3 +7,6 @@ tools/out/
 Thumbs.db
 *.log
 .vscode-test/
+
+# Local Claude Code preview config
+.claude/launch.json
