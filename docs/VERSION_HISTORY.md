@@ -2,7 +2,7 @@
 
 Side-by-side comparison of packaged builds of the **Travelling Kingdom** VS Code / Cursor sidebar extension (formerly developed under the Tamagotchi name). Current progress is stored in extension `globalState` (`travellingKingdom.petState`).
 
-Packaged `.vsix` files live in the project root. **Latest: 1.0.0.**
+Packaged `.vsix` files live in the project root. **Latest: 2.0.0.**
 
 This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`, comparing file inventories, and checking feature markers in `media/main.js` / `game.js`, `media/style.css`, and the compiled view provider. Newer packages are named `travelling-kingdom-<version>.vsix`.
 
@@ -59,12 +59,25 @@ This document was produced by unpacking each historical `tamagotchi-0.0.*.vsix`,
 | 0.0.50 | `travelling-kingdom-0.0.50.vsix` | 1.11 MB | 66 | All legs 50m; Scout Camp tents + right-side halberd; tree_apple rename |
 | 0.0.51 | `travelling-kingdom-0.0.51.vsix` | 1.11 MB | 66 | Wayside Stone traveler recruit |
 | 0.0.52 | `travelling-kingdom-0.0.52.vsix` | 1.12 MB | 66 | Market + Cloister villages; bishop/nun recruits |
-| 1.0.0 | `travelling-kingdom-1.0.0.vsix` | 1.13 MB | 66 | Current: first full release; shuffled 14 recruits; distance curve |
+| 2.0.0 | `travelling-kingdom-2.0.0.vsix` | ~1.9 MB | — | Current: rebuilt engine; 115 road events, 18 companions, story and finale, new UI |
+| 1.0.0 | `travelling-kingdom-1.0.0.vsix` | 1.13 MB | 66 | First full release; shuffled 14 recruits; distance curve |
 | 0.0.57 | `travelling-kingdom-0.0.57.vsix` | 1.13 MB | 66 | Manage squad roster; simple recruit join |
 | 0.0.56 | `travelling-kingdom-0.0.56.vsix` | 1.12 MB | 66 | no post-join camera/party snap from host state |
 | 0.0.55 | `travelling-kingdom-0.0.55.vsix` | 1.12 MB | 66 | no join teleport; trail may go off-screen left |
 | 0.0.54 | `travelling-kingdom-0.0.54.vsix` | 1.12 MB | 66 | recruit cutscene polish; framing; z-order |
 | 0.0.53 | `travelling-kingdom-0.0.53.vsix` | 1.12 MB | 66 | tent/stall scales; newest-left formation; Continue idle |
+
+---
+
+## 2.0.0 — The Kingsroad
+
+Ground-up rebuild. The webview is now a data-driven game (`media/js/`) with a canvas world renderer and a DOM interface, and the extension host (`src/`) stores a versioned save written by the webview.
+
+- **Content:** 115 road events with choices, odds, costs and follow-up chains; 142 banter lines; 18 companions with traits; 17 story stops plus the Dragon’s Rest finale; 7 road beats; 24 trinkets; 22 royal decrees; endless Royal Progress.
+- **World:** three seasonal biomes, procedural scenery, weather, local-time day/night with lighting, ambient wildlife, docked story cards that never cover the party.
+- **Host:** save key `travellingKingdom.save.v2` (1.x `travellingKingdom.petState` is migrated by the webview), multi-window lease, status bar summary, view badge, optional notifications.
+- **Art:** `tools/build-assets.py` curates only the frames used into `static/atlas/*`, `static/bg/*` and `static/ground.png`; the 1.x `static/characters`, `static/world` and `static/ui` folders were removed.
+- **Quality:** unit tests (`npm test`), a real VS Code integration test (`npm run test:integration`), a browser harness (`npm run dev`) and an economy simulation (`node tools/simulate.js`).
 
 ---
 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src {{cspSource}} data:; style-src {{cspSource}} 'unsafe-inline'; font-src {{cspSource}}; script-src 'nonce-{{nonce}}';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="{{base}}/media/style.css?v={{version}}" />
+  <title>Travelling Kingdom</title>
+</head>
+<body>
+  <div id="app" class="app booting" data-base="{{base}}" data-version="{{version}}">
+    <header id="hud" class="hud" aria-label="Kingdom status">
+      <div class="hud-top">
+        <button id="hud-hero" class="hud-hero" type="button" title="Your court">
+          <img id="hud-portrait" class="hud-portrait" alt="" />
+        </button>
+        <div class="hud-id">
+          <div id="hud-name" class="hud-name">—</div>
+          <div id="hud-title" class="hud-title">—</div>
+        </div>
+        <div id="hud-buffs" class="hud-buffs" aria-label="Active effects"></div>
+      </div>
+      <div class="hud-res" role="list">
+        <div class="res" id="res-gold" role="listitem" title="Coins"><img class="ico" data-icon="coin_gold" alt="" /><span class="res-v">0</span></div>
+        <div class="res" id="res-food" role="listitem" title="Rations"><img class="ico" data-icon="food" alt="" /><span class="res-v">0</span></div>
+        <div class="res" id="res-morale" role="listitem" title="Morale"><img class="ico" data-icon="heart" alt="" /><span class="res-v">0</span></div>
+        <div class="res" id="res-renown" role="listitem" title="Renown"><img class="ico" data-icon="crown" alt="" /><span class="res-v">0</span></div>
+      </div>
+      <div class="hud-route">
+        <div class="route-bar" id="route-bar" role="progressbar" aria-label="Distance to destination" aria-valuemin="0" aria-valuemax="100">
+          <div class="route-fill" id="route-fill"></div>
+          <div class="route-shine"></div>
+        </div>
+        <div class="route-meta">
+          <span id="route-dist" class="route-dist">0 m</span>
+          <span class="route-sep">→</span>
+          <span id="route-dest" class="route-dest">—</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="stage" class="stage">
+      <div id="viewport" class="viewport">
+        <canvas id="world" class="world" aria-label="Your travelling court" role="img"></canvas>
+        <div id="overlay" class="overlay" aria-hidden="true"></div>
+        <div id="toasts" class="toasts" aria-live="polite"></div>
+        <div id="hint" class="hint" hidden></div>
+        <button id="card-pill" class="card-pill" type="button" hidden>
+          <img class="ico" data-icon="talk" alt="" /><span id="card-pill-text">Something awaits</span>
+        </button>
+      </div>
+
+      <section id="card" class="card" hidden aria-live="polite">
+        <div class="card-head">
+          <div class="card-portrait"><img id="card-portrait" alt="" /></div>
+          <div class="card-who">
+            <div id="card-kicker" class="card-kicker"></div>
+            <div id="card-title" class="card-title"></div>
+          </div>
+          <button id="card-min" class="card-min" type="button" title="Hide card (the court waits)" aria-label="Hide card">▾</button>
+        </div>
+        <div id="card-scroll" class="card-scroll">
+          <div id="card-speaker" class="card-speaker"></div>
+          <p id="card-text" class="card-text"></p>
+          <div id="card-deltas" class="card-deltas"></div>
+          <div id="card-extra" class="card-extra"></div>
+        </div>
+        <div id="card-actions" class="card-actions"></div>
+      </section>
+
+      <section id="panel" class="panel" hidden>
+        <div class="panel-head">
+          <h2 id="panel-title" class="panel-title"></h2>
+          <button id="panel-close" class="panel-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div id="panel-tabs" class="panel-tabs" role="tablist"></div>
+        <div id="panel-body" class="panel-body"></div>
+      </section>
+
+      <section id="select" class="select" hidden>
+        <div class="select-inner">
+          <div class="select-crest"><img class="ico ico-lg" data-icon="crown" alt="" /></div>
+          <h1 class="select-title">Travelling Kingdom</h1>
+          <p class="select-flavor">You own one rented stable, a set of slightly moth-eaten robes, and a crown you bought at an auction five years ago. It is definitely real.</p>
+          <div class="select-carousel">
+            <button id="sel-prev" class="sel-arrow" type="button" aria-label="Previous">‹</button>
+            <div class="sel-card">
+              <img id="sel-portrait" class="sel-portrait" alt="" />
+              <div id="sel-role" class="sel-role">Queen</div>
+            </div>
+            <button id="sel-next" class="sel-arrow" type="button" aria-label="Next">›</button>
+          </div>
+          <label class="sel-name" for="sel-name-input">
+            <span>Your royal name</span>
+            <input id="sel-name-input" type="text" maxlength="20" autocomplete="off" spellcheck="false" />
+          </label>
+          <button id="sel-go" class="btn btn-gold btn-big" type="button">Begin the Journey</button>
+        </div>
+      </section>
+
+      <section id="observer" class="observer" hidden>
+        <div class="observer-inner">
+          <img class="ico ico-lg" data-icon="road" alt="" />
+          <h2>Your court is travelling in another window</h2>
+          <p>Only one VS Code window walks the Kingsroad at a time, so your progress never splits in two.</p>
+          <button id="observer-take" class="btn btn-gold" type="button">Travel here instead</button>
+        </div>
+      </section>
+
+      <div id="loading" class="loading">
+        <div class="loading-crown"></div>
+        <div class="loading-text">Polishing the crown…</div>
+      </div>
+    </main>
+
+    <nav id="nav" class="nav" aria-label="Menu">
+      <button class="nav-btn active" type="button" data-tab="road"><img class="ico" data-icon="road" alt="" /><span>Road</span></button>
+      <button class="nav-btn" type="button" data-tab="court"><img class="ico" data-icon="people" alt="" /><span>Court</span></button>
+      <button class="nav-btn" type="button" data-tab="journal"><img class="ico" data-icon="book" alt="" /><span>Journal</span><i class="nav-dot" hidden></i></button>
+      <button class="nav-btn" type="button" data-tab="settings"><img class="ico" data-icon="gear" alt="" /><span>Settings</span></button>
+    </nav>
+  </div>
+
+  <script nonce="{{nonce}}" src="{{base}}/media/js/gen/atlas.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/util.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/core.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/locations.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/story.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/events-road.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/events-world.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/data/banter.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/logic.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/assets.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/world.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/ui.js?v={{version}}"></script>
+  <script nonce="{{nonce}}" src="{{base}}/media/js/main.js?v={{version}}"></script>
+</body>
+</html>

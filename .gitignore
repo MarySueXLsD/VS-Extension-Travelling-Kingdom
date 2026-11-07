@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .tools/
+tools/out/
 *.vsix
 .DS_Store
 Thumbs.db

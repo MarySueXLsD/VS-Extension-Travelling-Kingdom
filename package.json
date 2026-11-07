@@ -1,28 +1,49 @@
 {
   "name": "travelling-kingdom",
   "displayName": "Travelling Kingdom",
-  "description": "A sidebar travel companion with destinations, party recruitment, meters, and care actions.",
-  "version": "1.0.0",
+  "description": "A pixel-art road-trip RPG that walks beside you while you code: recruit a ridiculous royal court, face 100+ funny road events, and reach the dragon's throne.",
+  "version": "2.0.0",
   "publisher": "MarySue",
+  "license": "SEE LICENSE IN LICENSE",
+  "pricing": "Free",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "game",
+    "idle game",
+    "pixel art",
+    "rpg",
+    "companion",
+    "pet",
+    "kingdom",
+    "medieval",
+    "adventure",
+    "story",
+    "sidebar",
+    "fun",
+    "break",
+    "tamagotchi",
+    "road trip"
+  ],
+  "galleryBanner": {
+    "color": "#4a161b",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom.git"
+    "url": "https://github.com/MarySueXLsD/VS-Extension-Travelling-Kingdom.git"
   },
   "bugs": {
-    "url": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/issues"
+    "url": "https://github.com/MarySueXLsD/VS-Extension-Travelling-Kingdom/issues"
   },
-  "homepage": "https://github.com/MarySueXLsD/vs_extension_travelling_kingdom",
+  "homepage": "https://github.com/MarySueXLsD/VS-Extension-Travelling-Kingdom#readme",
   "icon": "media/icon.png",
   "activationEvents": [
-    "onView:travellingKingdom.petView",
-    "onCommand:travellingKingdom.focus",
-    "onCommand:travellingKingdom.reset"
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -38,19 +59,40 @@
     "commands": [
       {
         "command": "travellingKingdom.focus",
-        "title": "Travelling Kingdom: Focus Pet View"
+        "title": "Open the Kingsroad",
+        "category": "Travelling Kingdom"
       },
       {
         "command": "travellingKingdom.reset",
-        "title": "Travelling Kingdom: Reset Progress"
+        "title": "Reset Progress…",
+        "category": "Travelling Kingdom"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Travelling Kingdom",
+      "properties": {
+        "travellingKingdom.statusBar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show your journey's progress in the status bar. Click it to open the Travelling Kingdom view."
+        },
+        "travellingKingdom.notifications.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Show a notification when a road event needs you while the Travelling Kingdom view is hidden."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/raw/main/ --baseImagesUrl https://github.com/MarySueXLsD/vs_extension_travelling_kingdom/raw/main/"
+    "test": "npm run compile && node --test test/logic.test.js test/host.test.js",
+    "test:integration": "npm run compile && node tools/run-integration.js",
+    "dev": "node tools/dev/server.js 5317",
+    "build:assets": "python tools/build-assets.py",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/MarySueXLsD/VS-Extension-Travelling-Kingdom/raw/main/ --baseImagesUrl https://github.com/MarySueXLsD/VS-Extension-Travelling-Kingdom/raw/main/"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

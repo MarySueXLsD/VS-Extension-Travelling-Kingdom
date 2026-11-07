@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tk-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/dev/server.js", "5317"],
+      "port": 5317
+    }
+  ]
+}
