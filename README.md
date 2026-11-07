@@ -1,6 +1,8 @@
 # Travelling Kingdom
 
-![Travelling Kingdom: your court on the road, a roadside encounter, and the dragon at the end of the Kingsroad](assets/banner.png)
+<p align="center">
+  <img src="assets/banner.gif" width="960" alt="Animated banner: the Travelling Kingdom title over a pixel forest while the Queen and her court walk the Kingsroad and companions chat in speech bubbles">
+</p>
 
 **A pixel-art road-trip RPG that walks beside you while you code.**
 
@@ -22,6 +24,8 @@ Your kingdom is whoever walks with you.
 - **140+ lines of court chatter.** Speech bubbles that react to hunger, weather, nightfall and who is in your party.
 - **Light, cosy resource play.** Coins, rations, morale and renown; markets, inns, odd jobs, foraging and shrines; 24 trinkets with permanent bonuses; titles that grow from *Self-Proclaimed Queen* to *Queen of the Realm*; 22 royal decrees to fulfil.
 - **Polite to your work.** It only runs while the view is visible, never steals keyboard focus, defaults to 30 fps, makes no network requests and collects no telemetry.
+
+![Your court on the road, a roadside encounter, and the dragon at the end of the Kingsroad](assets/banner.png)
 
 <table>
   <tr>
@@ -78,6 +82,7 @@ npm run test:integration # boots a real VS Code with a throwaway profile
 npm run dev              # browser harness at http://localhost:5317
 npm run package          # builds travelling-kingdom-<version>.vsix
 npm run build:assets     # rebuilds static/ from the licensed art packs (needs the packs locally)
+python tools/make-banner.py  # re-renders the animated README banner
 ```
 
 Press **F5** in VS Code to launch an Extension Development Host.
